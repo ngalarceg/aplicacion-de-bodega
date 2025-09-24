@@ -16,7 +16,7 @@ const role = 'ADMIN';
 
 const MONGODB_URI =
   process.env.MONGODB_URI ||
-  'mongodb+srv://ERPCHA>:ERPCHA@basededatos1.hwq53bl.mongodb.net/?retryWrites=true&w=majority&appName=Basededatos1';
+  'mongodb+srv://ERPCHA:ERPCHA@basededatos1.hwq53bl.mongodb.net/?retryWrites=true&w=majority&appName=Basededatos1';
 
 async function main() {
   try {
