@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img">
+  <title>ChileAtiende</title>
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b67b3" />
+      <stop offset="100%" stop-color="#0095d9" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="112" height="120" rx="18" fill="url(#blueGradient)" />
+  <polygon points="28,18 32.5,30 45,30 35,38 38,50 28,43 18,50 21,38 11,30 23.5,30" fill="#fff" />
+  <circle cx="52" cy="46" r="17" fill="#ffffff" opacity="0.95" />
+  <path d="M52 63c14 0 21 9 21 23v12H31V86c0-14 7-23 21-23z" fill="#ffffff" opacity="0.95" />
+  <circle cx="78" cy="70" r="11" fill="#ffffff" opacity="0.85" />
+  <path d="M78 82c8 0 12 5 12 13v13H66V95c0-8 4-13 12-13z" fill="#ffffff" opacity="0.85" />
+  <g fill="#0b3c75" font-family="'Montserrat', 'Segoe UI', sans-serif" font-weight="700">
+    <text x="128" y="56" font-size="36">Chile</text>
+    <text x="128" y="95" font-size="38">Atiende</text>
+  </g>
+  <rect x="128" y="22" width="150" height="6" fill="#e63946" rx="3" />
+</svg>

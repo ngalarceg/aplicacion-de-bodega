@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import chileAtiendeLogo from '../assets/chileatiende-logo.svg';
 
 const NAV_ITEMS = [
   { to: '.', label: 'Inventario', end: true },
@@ -21,14 +22,24 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div>
-          <h1>Bienvenido, {user.name}</h1>
-          <p className="muted">Rol: {user.role}</p>
+      <header className="dashboard-hero">
+        <div className="dashboard-brand">
+          <img src={chileAtiendeLogo} alt="ChileAtiende" className="dashboard-brand-logo" />
+          <div>
+            <p className="dashboard-brand-eyebrow">Red de atención ciudadana</p>
+            <h1>Panel de gestión de bodega</h1>
+          </div>
         </div>
-        <button type="button" className="logout" onClick={logout}>
-          Cerrar sesión
-        </button>
+        <div className="dashboard-user">
+          <div>
+            <span className="dashboard-user-hello">Hola,</span>
+            <p className="dashboard-user-name">{user.name}</p>
+            <span className="muted">Rol: {user.role}</span>
+          </div>
+          <button type="button" className="logout" onClick={logout}>
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <nav className="dashboard-nav">
