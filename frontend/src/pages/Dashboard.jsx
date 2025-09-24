@@ -6,6 +6,7 @@ import ProductForm from '../components/ProductForm';
 import ProductTable from '../components/ProductTable';
 import { getApiUrl } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import brandLogo from '../assets/chileatiende-logo.svg';
 
 function Dashboard() {
   const { user, token, logout, hasRole, request } = useAuth();
@@ -29,6 +30,16 @@ function Dashboard() {
   const selectedProduct = useMemo(
     () => products.find((product) => product._id === selectedProductId) || null,
     [products, selectedProductId]
+  );
+
+  const availableProducts = useMemo(
+    () => products.filter((product) => !product.currentAssignment).length,
+    [products]
+  );
+
+  const assignedProducts = useMemo(
+    () => products.length - availableProducts,
+    [products, availableProducts]
   );
 
   const loadProducts = useCallback(async () => {
@@ -220,15 +231,22 @@ function Dashboard() {
     [token]
   );
 
+  const welcomeMessage = canManage
+    ? 'Administra el inventario y garantiza la continuidad del servicio.'
+    : 'Consulta el inventario disponible y revisa los movimientos de los equipos.';
+
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div>
-          <h1>Bienvenido, {user.name}</h1>
-          <p className="muted">Rol: {user.role}</p>
+      <header className="dashboard-topbar">
+        <div className="dashboard-topbar__brand">
+          <img src={brandLogo} alt="ChileAtiende" className="dashboard-topbar__logo" />
+          <div>
+            <p className="brand-title">ChileAtiende</p>
+            <p className="brand-subtitle">Administración de Bodega</p>
+          </div>
         </div>
-        <div className="header-actions">
-          <button type="button" className="secondary" onClick={loadProducts} disabled={loadingProducts}>
+        <div className="topbar-actions">
+          <button type="button" className="ghost" onClick={loadProducts} disabled={loadingProducts}>
             {loadingProducts ? 'Actualizando...' : 'Actualizar stock'}
           </button>
           <button type="button" className="logout" onClick={logout}>
@@ -237,14 +255,43 @@ function Dashboard() {
         </div>
       </header>
 
+      <section className="dashboard-hero">
+        <div className="dashboard-hero__message">
+          <h1>Hola, {user.name}</h1>
+          <p>{welcomeMessage}</p>
+          <span className="hero-pill">Rol: {user.role}</span>
+        </div>
+        <div className="dashboard-hero__stats">
+          <div className="hero-stat">
+            <span>Productos totales</span>
+            <strong>{products.length}</strong>
+          </div>
+          <div className="hero-stat">
+            <span>Disponibles</span>
+            <strong>{availableProducts}</strong>
+          </div>
+          <div className="hero-stat">
+            <span>Asignados</span>
+            <strong>{assignedProducts}</strong>
+          </div>
+          {selectedProduct && (
+            <div className="hero-stat highlight">
+              <span>Producto seleccionado</span>
+              <strong>{selectedProduct.name}</strong>
+              <small>{selectedProduct.serialNumber || 'Sin número de serie'}</small>
+            </div>
+          )}
+        </div>
+      </section>
+
       {productsError && (
-        <div className="card">
+        <div className="alert alert-error" role="alert">
           <strong>Error:</strong> {productsError}
         </div>
       )}
 
       {adError && canManage && (
-        <div className="card">
+        <div className="alert alert-warning" role="status">
           <strong>Advertencia:</strong> {adError}
         </div>
       )}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" role="img" aria-labelledby="title desc">
+  <title id="title">ChileAtiende Marca</title>
+  <desc id="desc">Logotipo estilizado inspirado en ChileAtiende con bloque rojo y texto azul.</desc>
+  <rect width="72" height="72" rx="8" fill="#e1262f"/>
+  <circle cx="36" cy="24" r="11" fill="#ffffff"/>
+  <path d="M21 54c0-9.94 6.06-18 15-18s15 8.06 15 18" fill="#ffffff"/>
+  <path d="M29 56h14c3 0 5.5 2.5 5.5 5.5V68H23.5v-6.5C23.5 58.5 26 56 29 56z" fill="#003b70" opacity="0.35"/>
+  <g fill="#003b70" font-family="'Montserrat','Segoe UI',sans-serif" font-size="28" font-weight="600">
+    <text x="88" y="36">Chile</text>
+    <text x="88" y="60">Atiende</text>
+  </g>
+  <line x1="88" y1="42" x2="214" y2="42" stroke="#e1262f" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
+</svg>
