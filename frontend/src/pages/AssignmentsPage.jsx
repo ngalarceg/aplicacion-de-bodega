@@ -149,9 +149,9 @@ function AssignmentsPage() {
           await loadAssignmentHistory(updatedProduct?._id || targetId);
         }
         window.alert('Producto asignado correctamente.');
-        window.location.reload();
       } finally {
         setAssignmentProcessing(false);
+        window.location.reload();
       }
     },
     [
@@ -211,9 +211,9 @@ function AssignmentsPage() {
           await loadAssignmentHistory(updatedProduct?._id || targetId);
         }
         window.alert('Producto liberado correctamente.');
-        window.location.reload();
       } finally {
         setAssignmentProcessing(false);
+        window.location.reload();
       }
     },
     [
