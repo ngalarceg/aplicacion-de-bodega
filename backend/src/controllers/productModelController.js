@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const ProductModel = require('../models/ProductModel');
+const Product = require('../models/Product');
 
 exports.createProductModel = async (req, res) => {
   try {
@@ -41,5 +42,35 @@ exports.listProductModels = async (req, res) => {
   } catch (error) {
     console.error('listProductModels error', error);
     res.status(500).json({ message: 'No se pudieron obtener los modelos de producto.' });
+  }
+};
+
+exports.deleteProductModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Identificador de modelo inválido.' });
+    }
+
+    const productModel = await ProductModel.findById(id);
+    if (!productModel) {
+      return res.status(404).json({ message: 'Modelo de producto no encontrado.' });
+    }
+
+    const relatedProducts = await Product.countDocuments({ productModel: id });
+    if (relatedProducts > 0) {
+      return res.status(400).json({
+        message:
+          'No se puede eliminar el modelo porque existen productos registrados que lo utilizan.',
+      });
+    }
+
+    await productModel.deleteOne();
+
+    res.json({ message: 'Modelo eliminado correctamente.' });
+  } catch (error) {
+    console.error('deleteProductModel error', error);
+    res.status(500).json({ message: 'No se pudo eliminar el modelo de producto.' });
   }
 };
