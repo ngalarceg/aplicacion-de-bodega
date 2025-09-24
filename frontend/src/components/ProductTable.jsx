@@ -1,3 +1,5 @@
+import { getProductStatusBadge, getProductStatusLabel } from '../utils/productStatus';
+
 function formatType(type) {
   if (type === 'PURCHASED') {
     return 'Compra';
@@ -25,6 +27,7 @@ function ProductTable({ products, onSelect, selectedProductId }) {
               <th>N° parte</th>
               <th>Inventario / ID</th>
               <th>Guía</th>
+              <th>Estado</th>
               <th>Asignación actual</th>
             </tr>
           </thead>
@@ -55,13 +58,23 @@ function ProductTable({ products, onSelect, selectedProductId }) {
                   </td>
                   <td>{product.dispatchGuide?.guideNumber || '—'}</td>
                   <td>
-                    {product.currentAssignment ? (
+                    <span className={getProductStatusBadge(product.status)}>
+                      {getProductStatusLabel(product.status)}
+                    </span>
+                    {product.status === 'DECOMMISSIONED' && product.decommissionReason && (
+                      <div className="muted small-text">{product.decommissionReason}</div>
+                    )}
+                  </td>
+                  <td>
+                    {product.status === 'ASSIGNED' && product.currentAssignment ? (
                       <span>
                         {product.currentAssignment.assignedTo}{' '}
                         <span className="muted">({product.currentAssignment.location})</span>
                       </span>
+                    ) : product.status === 'DECOMMISSIONED' ? (
+                      <span className="muted">No disponible</span>
                     ) : (
-                      <span className="status success">Disponible</span>
+                      <span className="muted">Sin asignación</span>
                     )}
                   </td>
                 </tr>

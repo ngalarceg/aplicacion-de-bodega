@@ -26,7 +26,15 @@ const productSchema = new Schema(
     inventoryNumber: { type: String, trim: true },
     rentalId: { type: String, trim: true },
     dispatchGuide: { type: Schema.Types.ObjectId, ref: 'DispatchGuide', required: true },
+    status: {
+      type: String,
+      enum: ['AVAILABLE', 'ASSIGNED', 'DECOMMISSIONED'],
+      default: 'AVAILABLE',
+    },
     currentAssignment: assignmentSnapshotSchema,
+    decommissionReason: { type: String, trim: true },
+    decommissionedAt: { type: Date },
+    decommissionedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

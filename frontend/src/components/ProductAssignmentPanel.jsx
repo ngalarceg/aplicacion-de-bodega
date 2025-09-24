@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getProductStatusBadge, getProductStatusLabel, isDecommissioned } from '../utils/productStatus';
 
 const emptyState = {
   assignedTo: '',
@@ -44,6 +45,11 @@ function ProductAssignmentPanel({
     event.preventDefault();
     setError('');
 
+    if (isProductDecommissioned) {
+      setError('Este producto está dado de baja y no puede asignarse.');
+      return;
+    }
+
     if (!values.assignedTo || !values.assignedToAdAccount || !values.location) {
       setError('Completa los campos obligatorios.');
       return;
@@ -65,6 +71,12 @@ function ProductAssignmentPanel({
 
   const handleUnassign = async () => {
     setError('');
+
+    if (isProductDecommissioned) {
+      setError('El producto está dado de baja.');
+      return;
+    }
+
     try {
       await onUnassign({
         location: values.location || product.currentAssignment?.location,
@@ -76,6 +88,7 @@ function ProductAssignmentPanel({
     }
   };
 
+  const isProductDecommissioned = product ? isDecommissioned(product.status) : false;
   const currentAssignment = product.currentAssignment;
 
   return (
@@ -105,6 +118,17 @@ function ProductAssignmentPanel({
         <div>
           <strong>Guía:</strong> {product.dispatchGuide?.guideNumber || '—'}
         </div>
+        <div>
+          <strong>Estado:</strong>{' '}
+          <span className={getProductStatusBadge(product.status)}>
+            {getProductStatusLabel(product.status)}
+          </span>
+        </div>
+        {isProductDecommissioned && product.decommissionReason && (
+          <div className="muted small-text">
+            Motivo de baja: {product.decommissionReason}
+          </div>
+        )}
       </div>
 
       <section className="assignment-section">
@@ -123,12 +147,14 @@ function ProductAssignmentPanel({
                 type="button"
                 className="secondary"
                 onClick={handleUnassign}
-                disabled={isProcessing}
+                disabled={isProcessing || isProductDecommissioned}
               >
-                {isProcessing ? 'Procesando...' : 'Desasignar'}
+                {isProcessing ? 'Procesando...' : 'Liberar'}
               </button>
             )}
           </div>
+        ) : isProductDecommissioned ? (
+          <p className="muted">El producto está dado de baja.</p>
         ) : (
           <p className="muted">El producto está disponible.</p>
         )}
@@ -136,7 +162,9 @@ function ProductAssignmentPanel({
 
       <section>
         <h4>{currentAssignment ? 'Reasignar producto' : 'Asignar producto'}</h4>
-        {canManage ? (
+        {isProductDecommissioned ? (
+          <p className="muted">Este producto está dado de baja y no puede asignarse.</p>
+        ) : canManage ? (
           <form className="form-grid" onSubmit={handleAssign}>
             <label>
               Usuario

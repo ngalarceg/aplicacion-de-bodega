@@ -41,4 +41,18 @@ router.get(
   productController.getAssignmentHistory
 );
 
+router.post(
+  '/:id/decommission',
+  authenticate,
+  authorizeRoles('ADMIN', 'MANAGER'),
+  productController.decommissionProduct
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN', 'MANAGER'),
+  productController.deleteProduct
+);
+
 module.exports = router;

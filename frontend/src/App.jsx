@@ -3,6 +3,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
+import InventoryPage from './pages/InventoryPage';
+import AssignmentsPage from './pages/AssignmentsPage';
+import ProductEntryPage from './pages/ProductEntryPage';
+import DispatchGuidesPage from './pages/DispatchGuidesPage';
+import ProductDecommissionPage from './pages/ProductDecommissionPage';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -20,7 +25,13 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<InventoryPage />} />
+        <Route path="asignaciones" element={<AssignmentsPage />} />
+        <Route path="productos/nuevo" element={<ProductEntryPage />} />
+        <Route path="guias" element={<DispatchGuidesPage />} />
+        <Route path="bajas" element={<ProductDecommissionPage />} />
+      </Route>
       <Route
         path="*"
         element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />}

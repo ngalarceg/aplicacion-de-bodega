@@ -1,6 +1,8 @@
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const DispatchGuide = require('../models/DispatchGuide');
+const Product = require('../models/Product');
 
 exports.createDispatchGuide = async (req, res) => {
   try {
@@ -83,5 +85,44 @@ exports.downloadDispatchGuide = async (req, res) => {
   } catch (error) {
     console.error('downloadDispatchGuide error', error);
     res.status(500).json({ message: 'No se pudo descargar la guía de despacho.' });
+  }
+};
+
+exports.deleteDispatchGuide = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador inválido.' });
+    }
+
+    const guide = await DispatchGuide.findById(req.params.id);
+    if (!guide) {
+      return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
+    }
+
+    const associatedProducts = await Product.countDocuments({ dispatchGuide: guide._id });
+    if (associatedProducts > 0) {
+      return res.status(400).json({
+        message: 'No se puede eliminar la guía porque está asociada a productos registrados.',
+      });
+    }
+
+    const normalizedPath = path.normalize(
+      path.join(__dirname, '..', '..', 'uploads', guide.storedFileName)
+    );
+
+    if (fs.existsSync(normalizedPath)) {
+      try {
+        await fs.promises.unlink(normalizedPath);
+      } catch (fileError) {
+        console.warn('No se pudo eliminar el archivo de la guía de despacho', fileError);
+      }
+    }
+
+    await guide.deleteOne();
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('deleteDispatchGuide error', error);
+    res.status(500).json({ message: 'No se pudo eliminar la guía de despacho.' });
   }
 };
