@@ -18,6 +18,7 @@ function ProductCatalogPage() {
   const [formValues, setFormValues] = useState(initialFormState);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const sortedModels = useMemo(
     () =>
@@ -30,6 +31,25 @@ function ProductCatalogPage() {
       }),
     [models]
   );
+
+  const filteredModels = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLocaleLowerCase('es');
+    if (!normalizedTerm) {
+      return sortedModels;
+    }
+
+    return sortedModels.filter((model) => {
+      const name = model.name?.toLocaleLowerCase('es') ?? '';
+      const partNumber = model.partNumber?.toLocaleLowerCase('es') ?? '';
+      const description = model.description?.toLocaleLowerCase('es') ?? '';
+
+      return (
+        name.includes(normalizedTerm) ||
+        partNumber.includes(normalizedTerm) ||
+        description.includes(normalizedTerm)
+      );
+    });
+  }, [searchTerm, sortedModels]);
 
   const loadModels = useCallback(async () => {
     setLoading(true);
@@ -172,6 +192,15 @@ function ProductCatalogPage() {
             <h3>Modelos registrados</h3>
             <p className="muted">Listado de productos disponibles para asignar en el inventario.</p>
           </div>
+          <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Buscar por nombre, número de parte o descripción"
+            />
+          </label>
           <div className="table-responsive">
             <table className="data-table compact">
               <thead>
@@ -197,7 +226,14 @@ function ProductCatalogPage() {
                     </td>
                   </tr>
                 )}
-                {sortedModels.map((model) => (
+                {!loading && sortedModels.length > 0 && filteredModels.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="muted">
+                      No se encontraron modelos que coincidan con “{searchTerm}”.
+                    </td>
+                  </tr>
+                )}
+                {filteredModels.map((model) => (
                   <tr key={model._id}>
                     <td>{model.name}</td>
                     <td>{model.partNumber}</td>

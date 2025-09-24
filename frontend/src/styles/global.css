@@ -626,6 +626,10 @@ button.danger {
   min-width: 160px;
 }
 
+.inline-filter input {
+  min-width: 220px;
+}
+
 .assignment-section {
   background: var(--surface-muted);
   padding: 1.25rem;
