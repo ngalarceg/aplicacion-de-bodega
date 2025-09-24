@@ -3,7 +3,6 @@ import { getProductStatusBadge, getProductStatusLabel, isDecommissioned } from '
 
 const emptyState = {
   assignedTo: '',
-  assignedToAdAccount: '',
   location: '',
   assignmentDate: '',
   notes: '',
@@ -14,7 +13,6 @@ function ProductAssignmentPanel({
   onAssign,
   onUnassign,
   isProcessing,
-  adUsers,
   canManage,
 }) {
   const [values, setValues] = useState(emptyState);
@@ -50,7 +48,7 @@ function ProductAssignmentPanel({
       return;
     }
 
-    if (!values.assignedTo || !values.assignedToAdAccount || !values.location) {
+    if (!values.assignedTo || !values.location) {
       setError('Completa los campos obligatorios.');
       return;
     }
@@ -58,7 +56,6 @@ function ProductAssignmentPanel({
     try {
       await onAssign({
         assignedTo: values.assignedTo,
-        assignedToAdAccount: values.assignedToAdAccount,
         location: values.location,
         assignmentDate: values.assignmentDate || undefined,
         notes: values.notes || undefined,
@@ -90,6 +87,9 @@ function ProductAssignmentPanel({
 
   const isProductDecommissioned = product ? isDecommissioned(product.status) : false;
   const currentAssignment = product.currentAssignment;
+  const productName = product.productModel?.name || product.name;
+  const productPartNumber = product.productModel?.partNumber || product.partNumber;
+  const productDescription = product.productModel?.description ?? product.description ?? '';
 
   return (
     <div className="card">
@@ -103,13 +103,13 @@ function ProductAssignmentPanel({
 
       <div className="detail-grid">
         <div>
-          <strong>Nombre:</strong> {product.name}
+          <strong>Nombre:</strong> {productName}
         </div>
         <div>
           <strong>N° serie:</strong> {product.serialNumber}
         </div>
         <div>
-          <strong>N° parte:</strong> {product.partNumber}
+          <strong>N° parte:</strong> {productPartNumber}
         </div>
         <div>
           <strong>{product.type === 'PURCHASED' ? 'Inventario' : 'ID arriendo'}:</strong>{' '}
@@ -124,6 +124,11 @@ function ProductAssignmentPanel({
             {getProductStatusLabel(product.status)}
           </span>
         </div>
+        {productDescription && (
+          <div className="full-width muted small-text">
+            <strong>Descripción:</strong> {productDescription}
+          </div>
+        )}
         {isProductDecommissioned && product.decommissionReason && (
           <div className="muted small-text">
             Motivo de baja: {product.decommissionReason}
@@ -136,7 +141,7 @@ function ProductAssignmentPanel({
         {currentAssignment ? (
           <div className="assignment-box">
             <p>
-              <strong>{currentAssignment.assignedTo}</strong> · {currentAssignment.assignedToAdAccount}
+              <strong>{currentAssignment.assignedTo}</strong>
             </p>
             <p className="muted">
               Ubicación: {currentAssignment.location} ·{' '}
@@ -165,9 +170,9 @@ function ProductAssignmentPanel({
         {isProductDecommissioned ? (
           <p className="muted">Este producto está dado de baja y no puede asignarse.</p>
         ) : canManage ? (
-          <form className="form-grid" onSubmit={handleAssign}>
-            <label>
-              Usuario
+            <form className="form-grid" onSubmit={handleAssign}>
+              <label>
+                Usuario
               <input
                 name="assignedTo"
                 value={values.assignedTo}
@@ -175,27 +180,9 @@ function ProductAssignmentPanel({
                 placeholder="Nombre del colaborador"
                 required
               />
-            </label>
-            <label>
-              Cuenta AD
-              <input
-                list="ad-users"
-                name="assignedToAdAccount"
-                value={values.assignedToAdAccount}
-                onChange={handleChange}
-                placeholder="Cuenta de dominio"
-                required
-              />
-              <datalist id="ad-users">
-                {adUsers.map((user) => (
-                  <option key={user.id} value={user.adAccount}>
-                    {user.displayName}
-                  </option>
-                ))}
-              </datalist>
-            </label>
-            <label>
-              Ubicación
+              </label>
+              <label>
+                Ubicación
               <input
                 name="location"
                 value={values.location}
@@ -244,7 +231,6 @@ function ProductAssignmentPanel({
 
 ProductAssignmentPanel.defaultProps = {
   product: null,
-  adUsers: [],
   isProcessing: false,
   onAssign: () => Promise.resolve(),
   onUnassign: () => Promise.resolve(),

@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const dispatchGuideRoutes = require('./routes/dispatchGuideRoutes');
 const activeDirectoryRoutes = require('./routes/activeDirectoryRoutes');
+const productModelRoutes = require('./routes/productModelRoutes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/product-models', productModelRoutes);
 app.use('/api/dispatch-guides', dispatchGuideRoutes);
 app.use('/api/ad', activeDirectoryRoutes);
 

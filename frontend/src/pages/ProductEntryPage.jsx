@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import ProductForm from '../components/ProductForm';
 import { useAuth } from '../hooks/useAuth';
 
@@ -7,6 +8,9 @@ function ProductEntryPage() {
   const [dispatchGuides, setDispatchGuides] = useState([]);
   const [loadingGuides, setLoadingGuides] = useState(false);
   const [guidesError, setGuidesError] = useState('');
+  const [productModels, setProductModels] = useState([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelsError, setModelsError] = useState('');
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -26,11 +30,26 @@ function ProductEntryPage() {
     }
   }, [request]);
 
+  const loadProductModels = useCallback(async () => {
+    setLoadingModels(true);
+    setModelsError('');
+    try {
+      const models = await request('/product-models');
+      setProductModels(models);
+    } catch (error) {
+      setModelsError(error.message || 'No se pudieron obtener los modelos de producto.');
+      setProductModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
+  }, [request]);
+
   useEffect(() => {
     if (canManage) {
       loadDispatchGuides();
+      loadProductModels();
     }
-  }, [loadDispatchGuides, canManage]);
+  }, [loadDispatchGuides, loadProductModels, canManage]);
 
   const handleCreateProduct = useCallback(
     async (payload) => {
@@ -83,6 +102,14 @@ function ProductEntryPage() {
           >
             {loadingGuides ? 'Actualizando...' : 'Actualizar guías'}
           </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={loadProductModels}
+            disabled={loadingModels}
+          >
+            {loadingModels ? 'Actualizando...' : 'Actualizar modelos'}
+          </button>
         </div>
       </div>
 
@@ -92,9 +119,22 @@ function ProductEntryPage() {
         </div>
       )}
 
+      {modelsError && (
+        <div className="card">
+          <strong>Error:</strong> {modelsError}
+        </div>
+      )}
+
       {successMessage && (
         <div className="card success-card">
           <strong>Éxito:</strong> {successMessage}
+        </div>
+      )}
+
+      {productModels.length === 0 && !loadingModels && (
+        <div className="card">
+          <strong>Atención:</strong> Aún no hay modelos registrados. Visita el{' '}
+          <Link to="/productos/catalogo">catálogo de productos</Link> para crear uno antes de continuar.
         </div>
       )}
 
@@ -102,6 +142,7 @@ function ProductEntryPage() {
         onSubmit={handleCreateProduct}
         dispatchGuides={dispatchGuides}
         isSubmitting={creatingProduct}
+        productModels={productModels}
       />
     </section>
   );

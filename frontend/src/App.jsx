@@ -8,6 +8,8 @@ import AssignmentsPage from './pages/AssignmentsPage';
 import ProductEntryPage from './pages/ProductEntryPage';
 import DispatchGuidesPage from './pages/DispatchGuidesPage';
 import ProductDecommissionPage from './pages/ProductDecommissionPage';
+import StockConsultPage from './pages/StockConsultPage';
+import ProductCatalogPage from './pages/ProductCatalogPage';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -27,8 +29,10 @@ function App() {
         }
       >
         <Route index element={<InventoryPage />} />
+        <Route path="stock" element={<StockConsultPage />} />
         <Route path="asignaciones" element={<AssignmentsPage />} />
         <Route path="productos/nuevo" element={<ProductEntryPage />} />
+        <Route path="productos/catalogo" element={<ProductCatalogPage />} />
         <Route path="guias" element={<DispatchGuidesPage />} />
         <Route path="bajas" element={<ProductDecommissionPage />} />
       </Route>

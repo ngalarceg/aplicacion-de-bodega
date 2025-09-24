@@ -12,6 +12,7 @@ router.post(
 );
 
 router.get('/', authenticate, productController.listProducts);
+router.get('/stock', authenticate, productController.getStockSummary);
 router.get('/:id', authenticate, productController.getProduct);
 
 router.put(

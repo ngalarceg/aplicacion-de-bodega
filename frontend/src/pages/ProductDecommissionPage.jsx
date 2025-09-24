@@ -62,6 +62,8 @@ function ProductDecommissionPage() {
     [activeProducts, selectedProductId]
   );
 
+  const selectedProductName = selectedProduct?.productModel?.name || selectedProduct?.name;
+
   useEffect(() => {
     setReason('');
     setFormError('');
@@ -153,7 +155,7 @@ function ProductDecommissionPage() {
           {selectedProduct && (
             <form className="form-grid" onSubmit={handleSubmit}>
               <div className="full-width">
-                <strong>{selectedProduct.name}</strong>{' '}
+                <strong>{selectedProductName}</strong>{' '}
                 <span className="muted">({selectedProduct.serialNumber})</span>
               </div>
               <div className="full-width">

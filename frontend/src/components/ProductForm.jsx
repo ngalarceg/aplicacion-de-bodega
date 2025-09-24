@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const initialState = {
-  name: '',
-  description: '',
+  productModelId: '',
   type: 'PURCHASED',
   serialNumber: '',
-  partNumber: '',
   inventoryNumber: '',
   rentalId: '',
   dispatchGuideId: '',
 };
 
-function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
+function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) {
   const [values, setValues] = useState(initialState);
   const [error, setError] = useState('');
   const hasDispatchGuides = dispatchGuides.length > 0;
+  const hasProductModels = productModels.length > 0;
+  const selectedModel = useMemo(
+    () => productModels.find((model) => model._id === values.productModelId) || null,
+    [productModels, values.productModelId]
+  );
 
   useEffect(() => {
     setValues((prev) => {
@@ -32,6 +35,23 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
       return { ...prev, dispatchGuideId: dispatchGuides[0]._id };
     });
   }, [dispatchGuides]);
+
+  useEffect(() => {
+    setValues((prev) => {
+      if (!productModels.length) {
+        if (!prev.productModelId) {
+          return prev;
+        }
+        return { ...prev, productModelId: '' };
+      }
+
+      if (prev.productModelId && productModels.some((model) => model._id === prev.productModelId)) {
+        return prev;
+      }
+
+      return { ...prev, productModelId: productModels[0]._id };
+    });
+  }, [productModels]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -51,6 +71,11 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
     event.preventDefault();
     setError('');
 
+    if (!values.productModelId) {
+      setError('Selecciona el modelo de producto.');
+      return;
+    }
+
     if (values.type === 'RENTAL' && !values.rentalId) {
       setError('Debes ingresar el ID de arriendo.');
       return;
@@ -63,11 +88,9 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
 
     try {
       await onSubmit({
-        name: values.name,
-        description: values.description,
+        productModelId: values.productModelId,
         type: values.type,
         serialNumber: values.serialNumber,
-        partNumber: values.partNumber,
         inventoryNumber: values.type === 'PURCHASED' ? values.inventoryNumber : undefined,
         rentalId: values.type === 'RENTAL' ? values.rentalId : undefined,
         dispatchGuideId: values.dispatchGuideId,
@@ -86,20 +109,35 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
           Registra equipos provenientes de una compra o arriendo y vincúlalos con su guía de despacho.
         </p>
       </div>
-      {!hasDispatchGuides && (
+      {(!hasDispatchGuides || !hasProductModels) && (
         <p className="muted small-text">
-          Primero carga una guía de despacho para habilitar el registro de productos.
+          {hasProductModels
+            ? 'Primero carga una guía de despacho para habilitar el registro de productos.'
+            : 'Primero registra un modelo en el catálogo para habilitar el ingreso de productos.'}
         </p>
       )}
       <div className="form-grid">
-        <label>
-          Nombre
-          <input name="name" value={values.name} onChange={handleChange} required />
+        <label className="full-width">
+          Modelo de producto
+          <select
+            name="productModelId"
+            value={values.productModelId}
+            onChange={handleChange}
+            required
+            disabled={!hasProductModels}
+          >
+            {productModels.map((model) => (
+              <option key={model._id} value={model._id}>
+                {model.name} — {model.partNumber}
+              </option>
+            ))}
+          </select>
         </label>
-        <label>
-          Descripción
-          <input name="description" value={values.description} onChange={handleChange} />
-        </label>
+        {selectedModel?.description && (
+          <div className="full-width muted small-text">
+            <strong>Descripción:</strong> {selectedModel.description}
+          </div>
+        )}
         <label>
           Tipo
           <select name="type" value={values.type} onChange={handleTypeChange}>
@@ -110,10 +148,6 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
         <label>
           N° de serie
           <input name="serialNumber" value={values.serialNumber} onChange={handleChange} required />
-        </label>
-        <label>
-          N° de parte
-          <input name="partNumber" value={values.partNumber} onChange={handleChange} required />
         </label>
         {values.type === 'PURCHASED' && (
           <label>
@@ -149,7 +183,11 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
         </label>
       </div>
       {error && <p className="error">{error}</p>}
-      <button type="submit" className="primary" disabled={isSubmitting || !hasDispatchGuides}>
+      <button
+        type="submit"
+        className="primary"
+        disabled={isSubmitting || !hasDispatchGuides || !hasProductModels}
+      >
         {isSubmitting ? 'Guardando...' : 'Registrar producto'}
       </button>
     </form>
@@ -158,6 +196,7 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
 
 ProductForm.defaultProps = {
   dispatchGuides: [],
+  productModels: [],
   isSubmitting: false,
 };
 
