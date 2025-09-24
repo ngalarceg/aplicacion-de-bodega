@@ -12,7 +12,6 @@ function ProductEntryPage() {
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState('');
   const [creatingProduct, setCreatingProduct] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
 
@@ -54,15 +53,14 @@ function ProductEntryPage() {
   const handleCreateProduct = useCallback(
     async (payload) => {
       setCreatingProduct(true);
-      setSuccessMessage('');
       try {
         await request('/products', {
           method: 'POST',
           data: payload,
         });
-        setSuccessMessage('Producto registrado correctamente.');
+        window.alert('Producto registrado correctamente.');
+        window.location.reload();
       } catch (error) {
-        setSuccessMessage('');
         throw error;
       } finally {
         setCreatingProduct(false);
@@ -122,12 +120,6 @@ function ProductEntryPage() {
       {modelsError && (
         <div className="card">
           <strong>Error:</strong> {modelsError}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="card success-card">
-          <strong>Éxito:</strong> {successMessage}
         </div>
       )}
 
