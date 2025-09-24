@@ -3,9 +3,10 @@ import ProductTable from '../components/ProductTable';
 import ProductAssignmentPanel from '../components/ProductAssignmentPanel';
 import AssignmentHistory from '../components/AssignmentHistory';
 import { useAuth } from '../hooks/useAuth';
+import { filterProductsBySearch, normalizeSearchTerm } from '../utils/search';
 
 function AssignmentsPage() {
-  const { request, hasRole } = useAuth();
+  const { request, hasRole, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [productsError, setProductsError] = useState('');
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -13,6 +14,7 @@ function AssignmentsPage() {
   const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [assignmentProcessing, setAssignmentProcessing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
 
@@ -71,10 +73,33 @@ function AssignmentsPage() {
     }
   }, [selectedProductId, loadAssignmentHistory, canManage]);
 
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
+
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(products, searchTerm),
+    [products, searchTerm]
+  );
+
+  useEffect(() => {
+    setSelectedProductId((current) => {
+      if (!filteredProducts.length) {
+        return null;
+      }
+      if (current && filteredProducts.some((item) => item._id === current)) {
+        return current;
+      }
+      return filteredProducts[0]._id;
+    });
+  }, [filteredProducts]);
+
   const selectedProduct = useMemo(
     () => products.find((product) => product._id === selectedProductId) || null,
     [products, selectedProductId]
   );
+
+  const handleSearchChange = useCallback((event) => {
+    setSearchTerm(event.target.value);
+  }, []);
 
   const handleAssignProduct = useCallback(
     async (payload) => {
@@ -84,17 +109,56 @@ function AssignmentsPage() {
       const targetId = selectedProductId;
       setAssignmentProcessing(true);
       try {
-        await request(`/products/${targetId}/assign`, {
+        const response = await request(`/products/${targetId}/assign`, {
           method: 'POST',
           data: payload,
         });
-        await loadProducts();
-        await loadAssignmentHistory(targetId);
+        const updatedProduct = response?.product;
+        const assignment = response?.assignment;
+
+        if (updatedProduct?._id) {
+          setProducts((current) => {
+            const exists = current.some((item) => item._id === updatedProduct._id);
+            if (exists) {
+              return current.map((item) => (item._id === updatedProduct._id ? updatedProduct : item));
+            }
+            return [...current, updatedProduct];
+          });
+          setSelectedProductId(updatedProduct._id);
+        } else {
+          await loadProducts();
+        }
+
+        if (assignment?._id) {
+          const performer =
+            assignment.performedBy && assignment.performedBy.name
+              ? assignment.performedBy
+              : user
+              ? { _id: user._id, name: user.name, email: user.email, role: user.role }
+              : assignment.performedBy;
+
+          setAssignmentHistory((current) => {
+            const filtered = current.filter((item) => item._id !== assignment._id);
+            const entry = { ...assignment, performedBy: performer };
+            const next = [entry, ...filtered];
+            return next.sort(
+              (a, b) => new Date(b.assignmentDate).getTime() - new Date(a.assignmentDate).getTime()
+            );
+          });
+        } else {
+          await loadAssignmentHistory(updatedProduct?._id || targetId);
+        }
       } finally {
         setAssignmentProcessing(false);
       }
     },
-    [request, selectedProductId, loadProducts, loadAssignmentHistory]
+    [
+      request,
+      selectedProductId,
+      loadProducts,
+      loadAssignmentHistory,
+      user,
+    ]
   );
 
   const handleUnassignProduct = useCallback(
@@ -105,17 +169,56 @@ function AssignmentsPage() {
       const targetId = selectedProductId;
       setAssignmentProcessing(true);
       try {
-        await request(`/products/${targetId}/unassign`, {
+        const response = await request(`/products/${targetId}/unassign`, {
           method: 'POST',
           data: payload,
         });
-        await loadProducts();
-        await loadAssignmentHistory(targetId);
+        const updatedProduct = response?.product;
+        const assignment = response?.assignment;
+
+        if (updatedProduct?._id) {
+          setProducts((current) => {
+            const exists = current.some((item) => item._id === updatedProduct._id);
+            if (exists) {
+              return current.map((item) => (item._id === updatedProduct._id ? updatedProduct : item));
+            }
+            return [...current, updatedProduct];
+          });
+          setSelectedProductId(updatedProduct._id);
+        } else {
+          await loadProducts();
+        }
+
+        if (assignment?._id) {
+          const performer =
+            assignment.performedBy && assignment.performedBy.name
+              ? assignment.performedBy
+              : user
+              ? { _id: user._id, name: user.name, email: user.email, role: user.role }
+              : assignment.performedBy;
+
+          setAssignmentHistory((current) => {
+            const filtered = current.filter((item) => item._id !== assignment._id);
+            const entry = { ...assignment, performedBy: performer };
+            const next = [entry, ...filtered];
+            return next.sort(
+              (a, b) => new Date(b.assignmentDate).getTime() - new Date(a.assignmentDate).getTime()
+            );
+          });
+        } else {
+          await loadAssignmentHistory(updatedProduct?._id || targetId);
+        }
       } finally {
         setAssignmentProcessing(false);
       }
     },
-    [request, selectedProductId, loadProducts, loadAssignmentHistory]
+    [
+      request,
+      selectedProductId,
+      loadProducts,
+      loadAssignmentHistory,
+      user,
+    ]
   );
 
   if (!canManage) {
@@ -139,6 +242,15 @@ function AssignmentsPage() {
           <p className="muted">Gestiona la entrega y liberación de equipos.</p>
         </div>
         <div className="section-actions">
+          <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Nombre, serie, ubicación..."
+            />
+          </label>
           <button
             type="button"
             className="secondary"
@@ -158,9 +270,10 @@ function AssignmentsPage() {
 
       <div className="dashboard-grid">
         <ProductTable
-          products={products}
+          products={filteredProducts}
           onSelect={setSelectedProductId}
           selectedProductId={selectedProductId}
+          isFiltered={Boolean(normalizedSearch)}
         />
         <div className="stack">
           <ProductAssignmentPanel
