@@ -249,6 +249,8 @@ exports.assignProduct = async (req, res) => {
       notes,
     });
 
+    await assignment.populate('performedBy', 'name email role');
+
     product.currentAssignment = {
       assignedTo,
       location,
@@ -303,6 +305,8 @@ exports.unassignProduct = async (req, res) => {
       performedBy: req.user._id,
       notes,
     });
+
+    await assignment.populate('performedBy', 'name email role');
 
     product.currentAssignment = undefined;
     product.status = 'AVAILABLE';
