@@ -4,11 +4,26 @@ const Assignment = require('../models/Assignment');
 const DispatchGuide = require('../models/DispatchGuide');
 const { findUserByAccount } = require('../services/activeDirectoryService');
 
-function buildSearchQuery({ type, search }) {
+const ALLOWED_STATUSES = ['AVAILABLE', 'ASSIGNED', 'DECOMMISSIONED'];
+
+function buildSearchQuery({ type, status, search }) {
   const query = {};
 
   if (type && ['PURCHASED', 'RENTAL'].includes(type)) {
     query.type = type;
+  }
+
+  if (status) {
+    const statusValues = status
+      .split(',')
+      .map((value) => value.trim().toUpperCase())
+      .filter((value) => ALLOWED_STATUSES.includes(value));
+
+    if (statusValues.length === 1) {
+      query.status = statusValues[0];
+    } else if (statusValues.length > 1) {
+      query.status = { $in: statusValues };
+    }
   }
 
   if (search) {
@@ -92,6 +107,7 @@ exports.listProducts = async (req, res) => {
     const query = buildSearchQuery(req.query);
     const products = await Product.find(query)
       .populate('dispatchGuide')
+      .populate('decommissionedBy', 'name email role')
       .sort({ createdAt: -1 });
     res.json(products);
   } catch (error) {
@@ -106,7 +122,9 @@ exports.getProduct = async (req, res) => {
       return res.status(400).json({ message: 'Identificador inválido.' });
     }
 
-    const product = await Product.findById(req.params.id).populate('dispatchGuide');
+    const product = await Product.findById(req.params.id)
+      .populate('dispatchGuide')
+      .populate('decommissionedBy', 'name email role');
     if (!product) {
       return res.status(404).json({ message: 'Producto no encontrado.' });
     }
@@ -190,6 +208,10 @@ exports.assignProduct = async (req, res) => {
       return res.status(404).json({ message: 'Producto no encontrado.' });
     }
 
+    if (product.status === 'DECOMMISSIONED') {
+      return res.status(400).json({ message: 'El producto está dado de baja y no puede asignarse.' });
+    }
+
     const adUser = findUserByAccount(assignedToAdAccount);
     if (!adUser) {
       return res.status(400).json({ message: 'La cuenta de Active Directory no existe en el directorio simulado.' });
@@ -215,6 +237,11 @@ exports.assignProduct = async (req, res) => {
       assignmentDate: effectiveAssignmentDate,
     };
 
+    product.status = 'ASSIGNED';
+    product.decommissionReason = undefined;
+    product.decommissionedAt = undefined;
+    product.decommissionedBy = undefined;
+
     await product.save();
 
     res.json({ product, assignment });
@@ -237,6 +264,10 @@ exports.unassignProduct = async (req, res) => {
       return res.status(404).json({ message: 'Producto no encontrado.' });
     }
 
+    if (product.status === 'DECOMMISSIONED') {
+      return res.status(400).json({ message: 'El producto se encuentra dado de baja.' });
+    }
+
     if (!product.currentAssignment) {
       return res.status(400).json({ message: 'El producto no tiene una asignación activa.' });
     }
@@ -255,12 +286,84 @@ exports.unassignProduct = async (req, res) => {
     });
 
     product.currentAssignment = undefined;
+    product.status = 'AVAILABLE';
     await product.save();
 
     res.json({ product, assignment });
   } catch (error) {
     console.error('unassignProduct error', error);
     res.status(500).json({ message: 'No se pudo desasignar el producto.' });
+  }
+};
+
+exports.decommissionProduct = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador inválido.' });
+    }
+
+    const { reason } = req.body;
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: 'Debes indicar el motivo de la baja.' });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    if (product.status === 'DECOMMISSIONED') {
+      return res.status(400).json({ message: 'El producto ya se encuentra dado de baja.' });
+    }
+
+    if (product.currentAssignment) {
+      return res
+        .status(400)
+        .json({ message: 'Debes liberar la asignación antes de dar de baja el producto.' });
+    }
+
+    product.currentAssignment = undefined;
+    product.status = 'DECOMMISSIONED';
+    product.decommissionReason = reason.trim();
+    product.decommissionedAt = new Date();
+    product.decommissionedBy = req.user._id;
+
+    await product.save();
+
+    const populated = await product
+      .populate('dispatchGuide')
+      .populate('decommissionedBy', 'name email role');
+
+    res.json(populated);
+  } catch (error) {
+    console.error('decommissionProduct error', error);
+    res.status(500).json({ message: 'No se pudo dar de baja el producto.' });
+  }
+};
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador inválido.' });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    if (product.currentAssignment || product.status === 'ASSIGNED') {
+      return res.status(400).json({ message: 'Debes liberar el producto antes de eliminarlo.' });
+    }
+
+    await Assignment.deleteMany({ product: product._id });
+    await product.deleteOne();
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('deleteProduct error', error);
+    res.status(500).json({ message: 'No se pudo eliminar el producto.' });
   }
 };
 

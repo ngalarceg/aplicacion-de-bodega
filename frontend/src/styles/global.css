@@ -93,6 +93,12 @@ button {
   font-weight: 600;
 }
 
+button.compact {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 10px;
+}
+
 button.primary {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
@@ -136,6 +142,41 @@ small,
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 12px 24px -24px rgba(15, 23, 42, 0.35);
+}
+
+.dashboard-nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-nav-link:hover {
+  background-color: rgba(37, 99, 235, 0.12);
+}
+
+.dashboard-nav-link.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 10px 20px -18px rgba(37, 99, 235, 0.9);
+}
+
+.dashboard-content {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -238,6 +279,11 @@ small,
   color: #b45309;
 }
 
+.status.danger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -251,6 +297,38 @@ small,
 
 .form-grid .full-width {
   grid-column: 1 / -1;
+}
+
+.detail-grid .full-row {
+  grid-column: 1 / -1;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inline-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.inline-filter select {
+  min-width: 160px;
+}
+
+.card.success-card {
+  background: #ecfdf3;
+  border-left: 4px solid #16a34a;
+  color: #065f46;
+}
+
+.card.success-card strong {
+  color: inherit;
 }
 
 .detail-grid {
@@ -281,6 +359,12 @@ small,
   color: #ef4444;
 }
 
+button.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 12px 24px -16px rgba(239, 68, 68, 0.6);
+}
+
 @media (max-width: 960px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -297,5 +381,15 @@ small,
 
   .section-actions {
     justify-content: flex-start;
+  }
+
+  .dashboard-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-nav-link {
+    width: 100%;
+    text-align: center;
   }
 }

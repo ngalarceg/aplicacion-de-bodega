@@ -14,19 +14,20 @@ function AssignmentHistory({ history, loading }) {
               <th>Ubicación</th>
               <th>Fecha</th>
               <th>Registrado por</th>
+              <th>Notas</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   Cargando movimientos...
                 </td>
               </tr>
             )}
             {!loading && history.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No hay movimientos registrados.
                 </td>
               </tr>
@@ -35,7 +36,7 @@ function AssignmentHistory({ history, loading }) {
               <tr key={item._id}>
                 <td>
                   <span className={item.action === 'ASSIGN' ? 'status info' : 'status warning'}>
-                    {item.action === 'ASSIGN' ? 'Asignación' : 'Desasignación'}
+                    {item.action === 'ASSIGN' ? 'Asignación' : 'Liberación'}
                   </span>
                 </td>
                 <td>{item.assignedTo}</td>
@@ -43,6 +44,7 @@ function AssignmentHistory({ history, loading }) {
                 <td>{item.location}</td>
                 <td>{new Date(item.assignmentDate).toLocaleString('es-CL')}</td>
                 <td>{item.performedBy?.name || '—'}</td>
+                <td>{item.notes || '—'}</td>
               </tr>
             ))}
           </tbody>

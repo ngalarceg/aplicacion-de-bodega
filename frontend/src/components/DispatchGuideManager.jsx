@@ -6,7 +6,7 @@ const initialState = {
   dispatchDate: '',
 };
 
-function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, isUploading }) {
+function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, onDelete, isUploading }) {
   const [values, setValues] = useState(initialState);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -93,12 +93,13 @@ function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, isUploa
               <th>Proveedor</th>
               <th>Fecha</th>
               <th>Archivo</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {guides.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">
+                <td colSpan={5} className="muted">
                   No hay guías cargadas.
                 </td>
               </tr>
@@ -111,6 +112,15 @@ function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, isUploa
                 <td>
                   <button type="button" className="link" onClick={() => onDownload(guide)}>
                     Descargar
+                  </button>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="danger compact"
+                    onClick={() => onDelete(guide)}
+                  >
+                    Eliminar
                   </button>
                 </td>
               </tr>
@@ -126,6 +136,7 @@ DispatchGuideManager.defaultProps = {
   guides: [],
   onRefresh: () => {},
   onDownload: () => {},
+  onDelete: () => {},
   isUploading: false,
 };
 

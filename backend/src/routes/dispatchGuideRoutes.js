@@ -52,4 +52,11 @@ router.get(
   dispatchGuideController.downloadDispatchGuide
 );
 
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN', 'MANAGER'),
+  dispatchGuideController.deleteDispatchGuide
+);
+
 module.exports = router;
