@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { filterProductsBySearch, normalizeSearchTerm } from '../utils/search';
 
 function AssignmentsPage() {
-  const { request, hasRole, user } = useAuth();
+  const { request, hasRole } = useAuth();
   const [products, setProducts] = useState([]);
   const [productsError, setProductsError] = useState('');
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -49,7 +49,7 @@ function AssignmentsPage() {
       setHistoryLoading(true);
       try {
         const history = await request(`/products/${productId}/assignments`);
-        setAssignmentHistory(history);
+        setAssignmentHistory(Array.isArray(history) ? history : []);
       } catch (error) {
         setAssignmentHistory([]);
       } finally {
@@ -114,7 +114,6 @@ function AssignmentsPage() {
           data: payload,
         });
         const updatedProduct = response?.product;
-        const assignment = response?.assignment;
 
         if (updatedProduct?._id) {
           setProducts((current) => {
@@ -129,38 +128,13 @@ function AssignmentsPage() {
           await loadProducts();
         }
 
-        if (assignment?._id) {
-          const performer =
-            assignment.performedBy && assignment.performedBy.name
-              ? assignment.performedBy
-              : user
-              ? { _id: user._id, name: user.name, email: user.email, role: user.role }
-              : assignment.performedBy;
-
-          setAssignmentHistory((current) => {
-            const filtered = current.filter((item) => item._id !== assignment._id);
-            const entry = { ...assignment, performedBy: performer };
-            const next = [entry, ...filtered];
-            return next.sort(
-              (a, b) => new Date(b.assignmentDate).getTime() - new Date(a.assignmentDate).getTime()
-            );
-          });
-        } else {
-          await loadAssignmentHistory(updatedProduct?._id || targetId);
-        }
+        await loadAssignmentHistory(updatedProduct?._id || targetId);
         window.alert('Producto asignado correctamente.');
       } finally {
         setAssignmentProcessing(false);
-        window.location.reload();
       }
     },
-    [
-      request,
-      selectedProductId,
-      loadProducts,
-      loadAssignmentHistory,
-      user,
-    ]
+    [request, selectedProductId, loadProducts, loadAssignmentHistory]
   );
 
   const handleUnassignProduct = useCallback(
@@ -176,7 +150,6 @@ function AssignmentsPage() {
           data: payload,
         });
         const updatedProduct = response?.product;
-        const assignment = response?.assignment;
 
         if (updatedProduct?._id) {
           setProducts((current) => {
@@ -191,38 +164,13 @@ function AssignmentsPage() {
           await loadProducts();
         }
 
-        if (assignment?._id) {
-          const performer =
-            assignment.performedBy && assignment.performedBy.name
-              ? assignment.performedBy
-              : user
-              ? { _id: user._id, name: user.name, email: user.email, role: user.role }
-              : assignment.performedBy;
-
-          setAssignmentHistory((current) => {
-            const filtered = current.filter((item) => item._id !== assignment._id);
-            const entry = { ...assignment, performedBy: performer };
-            const next = [entry, ...filtered];
-            return next.sort(
-              (a, b) => new Date(b.assignmentDate).getTime() - new Date(a.assignmentDate).getTime()
-            );
-          });
-        } else {
-          await loadAssignmentHistory(updatedProduct?._id || targetId);
-        }
+        await loadAssignmentHistory(updatedProduct?._id || targetId);
         window.alert('Producto liberado correctamente.');
       } finally {
         setAssignmentProcessing(false);
-        window.location.reload();
       }
     },
-    [
-      request,
-      selectedProductId,
-      loadProducts,
-      loadAssignmentHistory,
-      user,
-    ]
+    [request, selectedProductId, loadProducts, loadAssignmentHistory]
   );
 
   if (!canManage) {

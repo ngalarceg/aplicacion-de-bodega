@@ -233,6 +233,12 @@ exports.assignProduct = async (req, res) => {
 
     const effectiveAssignmentDate = assignmentDate ? new Date(assignmentDate) : new Date();
 
+    if (product.status !== 'AVAILABLE' || product.currentAssignment) {
+      return res.status(400).json({
+        message: 'Debes liberar el producto antes de asignarlo a otra persona.',
+      });
+    }
+
     const assignment = await Assignment.create({
       product: product._id,
       action: 'ASSIGN',

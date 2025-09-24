@@ -34,6 +34,11 @@ function ProductAssignmentPanel({
     );
   }
 
+  const currentAssignment = product.currentAssignment || null;
+  const isProductDecommissioned = isDecommissioned(product.status);
+  const isProductAvailableForAssignment =
+    !isProductDecommissioned && product.status === 'AVAILABLE' && !currentAssignment;
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -45,6 +50,11 @@ function ProductAssignmentPanel({
 
     if (isProductDecommissioned) {
       setError('Este producto está dado de baja y no puede asignarse.');
+      return;
+    }
+
+    if (!isProductAvailableForAssignment) {
+      setError('Debes liberar el producto antes de asignarlo.');
       return;
     }
 
@@ -76,7 +86,7 @@ function ProductAssignmentPanel({
 
     try {
       await onUnassign({
-        location: values.location || product.currentAssignment?.location,
+        location: values.location || currentAssignment?.location,
         notes: values.notes || undefined,
       });
       setValues(emptyState);
@@ -85,8 +95,6 @@ function ProductAssignmentPanel({
     }
   };
 
-  const isProductDecommissioned = product ? isDecommissioned(product.status) : false;
-  const currentAssignment = product.currentAssignment;
   const productName = product.productModel?.name || product.name;
   const productPartNumber = product.productModel?.partNumber || product.partNumber;
   const productDescription = product.productModel?.description ?? product.description ?? '';
@@ -166,9 +174,11 @@ function ProductAssignmentPanel({
       </section>
 
       <section>
-        <h4>{currentAssignment ? 'Reasignar producto' : 'Asignar producto'}</h4>
+        <h4>Asignar producto</h4>
         {isProductDecommissioned ? (
           <p className="muted">Este producto está dado de baja y no puede asignarse.</p>
+        ) : !isProductAvailableForAssignment ? (
+          <p className="muted">Debes liberar el producto antes de asignarlo a otra persona.</p>
         ) : canManage ? (
             <form className="form-grid" onSubmit={handleAssign}>
               <label>
@@ -212,11 +222,7 @@ function ProductAssignmentPanel({
             </label>
             {error && <p className="error">{error}</p>}
             <button type="submit" className="primary" disabled={isProcessing}>
-              {isProcessing
-                ? 'Procesando...'
-                : currentAssignment
-                ? 'Actualizar asignación'
-                : 'Asignar'}
+              {isProcessing ? 'Procesando...' : 'Asignar'}
             </button>
           </form>
         ) : (
