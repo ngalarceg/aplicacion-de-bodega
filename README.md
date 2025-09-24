@@ -41,9 +41,18 @@ El sistema contempla tres roles de usuario:
    cd ../frontend
    npm install
    ```
-4. Registra el primer usuario mediante `POST /api/auth/register` (sin cabecera `Authorization`).
-   Ese usuario será administrador automáticamente. Para crear cuentas adicionales envía el token
-   JWT de un admin en la cabecera `Authorization: Bearer <token>`.
+4. Crea el primer usuario de alguna de estas formas:
+   - Ejecuta el seed incluido en el backend:
+     ```bash
+     cd backend
+     npm run seed
+     ```
+     Esto generará un administrador por defecto (`admin@bodega.com` / `Admin123!`).
+     Puedes personalizar nombre, correo y contraseña exportando las variables de entorno
+     `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` antes de ejecutar el comando.
+   - O bien realiza una petición `POST /api/auth/register` (sin cabecera `Authorization`). Ese
+     primer usuario será administrador automáticamente. Para crear cuentas adicionales envía el
+     token JWT de un admin en la cabecera `Authorization: Bearer <token>`.
 5. Ejecutar los servicios en terminales separadas:
    ```bash
    # Backend
