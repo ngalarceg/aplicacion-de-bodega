@@ -51,7 +51,7 @@ function AssignmentsPage() {
         const history = await request(`/products/${productId}/assignments`);
         setAssignmentHistory(Array.isArray(history) ? history : []);
       } catch (error) {
-        setAssignmentHistory([]);
+        console.error('No se pudo cargar el historial de asignaciones.', error);
       } finally {
         setHistoryLoading(false);
       }
@@ -114,6 +114,7 @@ function AssignmentsPage() {
           data: payload,
         });
         const updatedProduct = response?.product;
+        const newAssignment = response?.assignment;
 
         if (updatedProduct?._id) {
           setProducts((current) => {
@@ -125,9 +126,20 @@ function AssignmentsPage() {
           });
           setSelectedProductId(updatedProduct._id);
         } else {
-          await loadProducts();
+          setSelectedProductId(targetId);
         }
 
+        if (newAssignment?._id) {
+          setAssignmentHistory((current) => {
+            const exists = current.some((item) => item._id === newAssignment._id);
+            if (exists) {
+              return current.map((item) => (item._id === newAssignment._id ? newAssignment : item));
+            }
+            return [newAssignment, ...current];
+          });
+        }
+
+        await loadProducts();
         await loadAssignmentHistory(updatedProduct?._id || targetId);
         window.alert('Producto asignado correctamente.');
       } finally {
@@ -150,6 +162,7 @@ function AssignmentsPage() {
           data: payload,
         });
         const updatedProduct = response?.product;
+        const newAssignment = response?.assignment;
 
         if (updatedProduct?._id) {
           setProducts((current) => {
@@ -161,9 +174,20 @@ function AssignmentsPage() {
           });
           setSelectedProductId(updatedProduct._id);
         } else {
-          await loadProducts();
+          setSelectedProductId(targetId);
         }
 
+        if (newAssignment?._id) {
+          setAssignmentHistory((current) => {
+            const exists = current.some((item) => item._id === newAssignment._id);
+            if (exists) {
+              return current.map((item) => (item._id === newAssignment._id ? newAssignment : item));
+            }
+            return [newAssignment, ...current];
+          });
+        }
+
+        await loadProducts();
         await loadAssignmentHistory(updatedProduct?._id || targetId);
         window.alert('Producto liberado correctamente.');
       } finally {
