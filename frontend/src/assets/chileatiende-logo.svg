@@ -1,20 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 300" role="img">
   <title>ChileAtiende</title>
   <defs>
-    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b67b3" />
-      <stop offset="100%" stop-color="#0095d9" />
-    </linearGradient>
+    <clipPath id="roundedIcon">
+      <rect x="45" y="30" width="170" height="170" rx="22" ry="22" />
+    </clipPath>
   </defs>
-  <rect x="0" y="0" width="112" height="120" rx="18" fill="url(#blueGradient)" />
-  <polygon points="28,18 32.5,30 45,30 35,38 38,50 28,43 18,50 21,38 11,30 23.5,30" fill="#fff" />
-  <circle cx="52" cy="46" r="17" fill="#ffffff" opacity="0.95" />
-  <path d="M52 63c14 0 21 9 21 23v12H31V86c0-14 7-23 21-23z" fill="#ffffff" opacity="0.95" />
-  <circle cx="78" cy="70" r="11" fill="#ffffff" opacity="0.85" />
-  <path d="M78 82c8 0 12 5 12 13v13H66V95c0-8 4-13 12-13z" fill="#ffffff" opacity="0.85" />
-  <g fill="#0b3c75" font-family="'Montserrat', 'Segoe UI', sans-serif" font-weight="700">
-    <text x="128" y="56" font-size="36">Chile</text>
-    <text x="128" y="95" font-size="38">Atiende</text>
+  <g clip-path="url(#roundedIcon)">
+    <rect x="45" y="30" width="170" height="170" fill="#e5253e" />
+    <rect x="45" y="30" width="85" height="170" fill="#0057a6" />
+    <polygon fill="#ffffff" points="90 50 94.5 62 107 62 97 70 100 82 90 75 80 82 83 70 73 62 85.5 62" />
+    <circle cx="130" cy="116" r="24" fill="#ffffff" />
+    <path d="M130 140c30 0 48 18 48 50v32H82v-32c0-32 18-50 48-50z" fill="#ffffff" />
+    <circle cx="174" cy="154" r="16" fill="#ffffff" opacity="0.92" />
+    <path d="M174 170c18 0 28 11 28 29v23h-56v-23c0-18 10-29 28-29z" fill="#ffffff" opacity="0.92" />
+    <circle cx="98" cy="162" r="13" fill="#ffffff" opacity="0.9" />
+    <path d="M98 174c15 0 23 9 23 24v22H75v-22c0-15 8-24 23-24z" fill="#ffffff" opacity="0.9" />
   </g>
-  <rect x="128" y="22" width="150" height="6" fill="#e63946" rx="3" />
+  <text x="130" y="244" text-anchor="middle" font-family="'Montserrat', 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#0057a6">Chile</text>
+  <text x="130" y="286" text-anchor="middle" font-family="'Montserrat', 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#0057a6">Atiende</text>
 </svg>
