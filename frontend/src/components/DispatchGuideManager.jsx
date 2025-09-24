@@ -45,7 +45,7 @@ function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, isUploa
   return (
     <div className="card">
       <div className="card-header">
-        <h2>Guías de despacho</h2>
+        <h3>Guías de despacho</h3>
         <p className="muted">
           Carga los documentos asociados a los productos y mantenlos disponibles para auditorías.
         </p>

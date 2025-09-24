@@ -25,7 +25,7 @@ const productSchema = new Schema(
     partNumber: { type: String, required: true, trim: true },
     inventoryNumber: { type: String, trim: true },
     rentalId: { type: String, trim: true },
-    dispatchGuide: { type: Schema.Types.ObjectId, ref: 'DispatchGuide' },
+    dispatchGuide: { type: Schema.Types.ObjectId, ref: 'DispatchGuide', required: true },
     currentAssignment: assignmentSnapshotSchema,
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

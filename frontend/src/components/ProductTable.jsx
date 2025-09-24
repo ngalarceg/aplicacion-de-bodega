@@ -12,7 +12,7 @@ function ProductTable({ products, onSelect, selectedProductId }) {
   return (
     <div className="card">
       <div className="card-header">
-        <h2>Inventario</h2>
+        <h3>Detalle de inventario</h3>
         <p className="muted">Selecciona un producto para ver sus detalles y gestionar asignaciones.</p>
       </div>
       <div className="table-responsive">

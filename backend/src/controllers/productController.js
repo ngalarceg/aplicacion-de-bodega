@@ -50,20 +50,22 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ message: 'Los productos de arriendo requieren un ID de arriendo.' });
     }
 
+    if (!dispatchGuideId) {
+      return res.status(400).json({ message: 'Debes asociar el producto a una guía de despacho.' });
+    }
+
     if (type === 'PURCHASED' && !inventoryNumber) {
       // El inventario es opcional, pero avisamos si falta.
       console.warn('Producto de compra sin número de inventario, se almacenará vacío.');
     }
 
-    let dispatchGuide = null;
-    if (dispatchGuideId) {
-      if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
-        return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
-      }
-      dispatchGuide = await DispatchGuide.findById(dispatchGuideId);
-      if (!dispatchGuide) {
-        return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
-      }
+    if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
+      return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
+    }
+
+    const dispatchGuide = await DispatchGuide.findById(dispatchGuideId);
+    if (!dispatchGuide) {
+      return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
     }
 
     const product = await Product.create({
@@ -74,7 +76,7 @@ exports.createProduct = async (req, res) => {
       partNumber,
       inventoryNumber: type === 'PURCHASED' ? inventoryNumber || null : undefined,
       rentalId: type === 'RENTAL' ? rentalId : undefined,
-      dispatchGuide: dispatchGuide ? dispatchGuide._id : undefined,
+      dispatchGuide: dispatchGuide._id,
       createdBy: req.user._id,
     });
 
@@ -146,18 +148,17 @@ exports.updateProduct = async (req, res) => {
     for (const key of updates) {
       if (key === 'dispatchGuideId') {
         const dispatchGuideId = req.body.dispatchGuideId;
-        if (dispatchGuideId) {
-          if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
-            return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
-          }
-          const dispatchGuide = await DispatchGuide.findById(dispatchGuideId);
-          if (!dispatchGuide) {
-            return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
-          }
-          product.dispatchGuide = dispatchGuide._id;
-        } else {
-          product.dispatchGuide = undefined;
+        if (!dispatchGuideId) {
+          return res.status(400).json({ message: 'Los productos deben permanecer asociados a una guía de despacho.' });
         }
+        if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
+          return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
+        }
+        const dispatchGuide = await DispatchGuide.findById(dispatchGuideId);
+        if (!dispatchGuide) {
+          return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
+        }
+        product.dispatchGuide = dispatchGuide._id;
       } else {
         product[key] = req.body[key];
       }
