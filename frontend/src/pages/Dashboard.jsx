@@ -227,63 +227,99 @@ function Dashboard() {
           <h1>Bienvenido, {user.name}</h1>
           <p className="muted">Rol: {user.role}</p>
         </div>
-        <div className="header-actions">
-          <button type="button" className="secondary" onClick={loadProducts} disabled={loadingProducts}>
-            {loadingProducts ? 'Actualizando...' : 'Actualizar stock'}
-          </button>
-          <button type="button" className="logout" onClick={logout}>
-            Cerrar sesión
-          </button>
-        </div>
+        <button type="button" className="logout" onClick={logout}>
+          Cerrar sesión
+        </button>
       </header>
 
-      {productsError && (
-        <div className="card">
-          <strong>Error:</strong> {productsError}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <div>
+            <h2>Inventario general</h2>
+            <p className="muted">Revisa el stock total disponible en bodega.</p>
+          </div>
+          <div className="section-actions">
+            <button
+              type="button"
+              className="secondary"
+              onClick={loadProducts}
+              disabled={loadingProducts}
+            >
+              {loadingProducts ? 'Actualizando...' : 'Actualizar stock'}
+            </button>
+          </div>
         </div>
-      )}
 
-      {adError && canManage && (
-        <div className="card">
-          <strong>Advertencia:</strong> {adError}
-        </div>
-      )}
+        {productsError && (
+          <div className="card">
+            <strong>Error:</strong> {productsError}
+          </div>
+        )}
 
-      <div className="dashboard-grid">
         <ProductTable
           products={products}
           onSelect={setSelectedProductId}
           selectedProductId={selectedProductId}
         />
-        <ProductAssignmentPanel
-          product={selectedProduct}
-          onAssign={handleAssignProduct}
-          onUnassign={handleUnassignProduct}
-          adUsers={adUsers}
-          isProcessing={assignmentProcessing}
-          canManage={canManage}
-        />
-      </div>
+      </section>
 
-      <div className="dashboard-grid secondary">
-        {canManage && (
-          <ProductForm
-            onSubmit={handleCreateProduct}
-            dispatchGuides={dispatchGuides}
-            isSubmitting={creatingProduct}
-          />
+      <section className="dashboard-section">
+        <div className="section-header">
+          <div>
+            <h2>Asignaciones</h2>
+            <p className="muted">
+              Gestiona la entrega de equipos y revisa el historial de movimientos.
+            </p>
+          </div>
+        </div>
+
+        {adError && canManage && (
+          <div className="card">
+            <strong>Advertencia:</strong> {adError}
+          </div>
         )}
-        <AssignmentHistory history={assignmentHistory} loading={historyLoading} />
-      </div>
 
-      {canAccessGuides && (
-        <DispatchGuideManager
-          guides={dispatchGuides}
-          onUpload={handleUploadGuide}
-          onRefresh={loadDispatchGuides}
-          onDownload={handleDownloadGuide}
-          isUploading={uploadingGuide || guidesLoading}
-        />
+        <div className="dashboard-grid">
+          <ProductAssignmentPanel
+            product={selectedProduct}
+            onAssign={handleAssignProduct}
+            onUnassign={handleUnassignProduct}
+            adUsers={adUsers}
+            isProcessing={assignmentProcessing}
+            canManage={canManage}
+          />
+          <AssignmentHistory history={assignmentHistory} loading={historyLoading} />
+        </div>
+      </section>
+
+      {canManage && (
+        <section className="dashboard-section">
+          <div className="section-header">
+            <div>
+              <h2>Ingresos</h2>
+              <p className="muted">
+                Registra nuevos equipos y respáldalos con su guía de despacho.
+              </p>
+            </div>
+          </div>
+
+          <div className="dashboard-grid secondary">
+            <ProductForm
+              onSubmit={handleCreateProduct}
+              dispatchGuides={dispatchGuides}
+              isSubmitting={creatingProduct}
+            />
+            {canAccessGuides && (
+              <DispatchGuideManager
+                guides={dispatchGuides}
+                onUpload={handleUploadGuide}
+                onRefresh={loadDispatchGuides}
+                onDownload={handleDownloadGuide}
+                isUploading={uploadingGuide || guidesLoading}
+              />
+            )}
+          </div>
+        </section>
       )}
     </div>
   );

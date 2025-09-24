@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const initialState = {
   name: '',
@@ -14,6 +14,24 @@ const initialState = {
 function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
   const [values, setValues] = useState(initialState);
   const [error, setError] = useState('');
+  const hasDispatchGuides = dispatchGuides.length > 0;
+
+  useEffect(() => {
+    setValues((prev) => {
+      if (!dispatchGuides.length) {
+        if (!prev.dispatchGuideId) {
+          return prev;
+        }
+        return { ...prev, dispatchGuideId: '' };
+      }
+
+      if (prev.dispatchGuideId && dispatchGuides.some((guide) => guide._id === prev.dispatchGuideId)) {
+        return prev;
+      }
+
+      return { ...prev, dispatchGuideId: dispatchGuides[0]._id };
+    });
+  }, [dispatchGuides]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -38,6 +56,11 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
       return;
     }
 
+    if (!values.dispatchGuideId) {
+      setError('Selecciona la guía de despacho correspondiente al ingreso.');
+      return;
+    }
+
     try {
       await onSubmit({
         name: values.name,
@@ -47,7 +70,7 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
         partNumber: values.partNumber,
         inventoryNumber: values.type === 'PURCHASED' ? values.inventoryNumber : undefined,
         rentalId: values.type === 'RENTAL' ? values.rentalId : undefined,
-        dispatchGuideId: values.dispatchGuideId || undefined,
+        dispatchGuideId: values.dispatchGuideId,
       });
       setValues(initialState);
     } catch (submitError) {
@@ -58,9 +81,16 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
   return (
     <form className="card" onSubmit={handleSubmit}>
       <div className="card-header">
-        <h2>Nuevo producto</h2>
-        <p className="muted">Registra equipos provenientes de una compra o arriendo.</p>
+        <h3>Nuevo producto</h3>
+        <p className="muted">
+          Registra equipos provenientes de una compra o arriendo y vincúlalos con su guía de despacho.
+        </p>
       </div>
+      {!hasDispatchGuides && (
+        <p className="muted small-text">
+          Primero carga una guía de despacho para habilitar el registro de productos.
+        </p>
+      )}
       <div className="form-grid">
         <label>
           Nombre
@@ -103,8 +133,13 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
         )}
         <label>
           Guía de despacho
-          <select name="dispatchGuideId" value={values.dispatchGuideId} onChange={handleChange}>
-            <option value="">Sin guía asociada</option>
+          <select
+            name="dispatchGuideId"
+            value={values.dispatchGuideId}
+            onChange={handleChange}
+            required
+            disabled={!hasDispatchGuides}
+          >
             {dispatchGuides.map((guide) => (
               <option key={guide._id} value={guide._id}>
                 {guide.guideNumber} — {new Date(guide.dispatchDate).toLocaleDateString('es-CL')}
@@ -114,7 +149,7 @@ function ProductForm({ onSubmit, dispatchGuides, isSubmitting }) {
         </label>
       </div>
       {error && <p className="error">{error}</p>}
-      <button type="submit" className="primary" disabled={isSubmitting}>
+      <button type="submit" className="primary" disabled={isSubmitting || !hasDispatchGuides}>
         {isSubmitting ? 'Guardando...' : 'Registrar producto'}
       </button>
     </form>
