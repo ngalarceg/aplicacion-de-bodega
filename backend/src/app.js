@@ -8,6 +8,7 @@ const productRoutes = require('./routes/productRoutes');
 const dispatchGuideRoutes = require('./routes/dispatchGuideRoutes');
 const activeDirectoryRoutes = require('./routes/activeDirectoryRoutes');
 const productModelRoutes = require('./routes/productModelRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/product-models', productModelRoutes);
 app.use('/api/dispatch-guides', dispatchGuideRoutes);
 app.use('/api/ad', activeDirectoryRoutes);
+app.use('/api/users', userRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

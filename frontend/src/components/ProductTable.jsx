@@ -10,7 +10,7 @@ function formatType(type) {
   return type;
 }
 
-function ProductTable({ products, onSelect, selectedProductId }) {
+function ProductTable({ products, onSelect, selectedProductId, isFiltered = false }) {
   return (
     <div className="card">
       <div className="card-header">
@@ -34,8 +34,10 @@ function ProductTable({ products, onSelect, selectedProductId }) {
           <tbody>
             {products.length === 0 && (
               <tr>
-                <td colSpan={7} className="muted">
-                  Aún no hay productos registrados.
+                <td colSpan={8} className="muted">
+                  {isFiltered
+                    ? 'No hay productos que coincidan con la búsqueda.'
+                    : 'Aún no hay productos registrados.'}
                 </td>
               </tr>
             )}

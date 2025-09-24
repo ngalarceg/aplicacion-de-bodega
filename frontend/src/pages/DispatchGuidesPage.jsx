@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DispatchGuideManager from '../components/DispatchGuideManager';
 import { getApiUrl } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import { filterDispatchGuides, normalizeSearchTerm } from '../utils/search';
 
 function DispatchGuidesPage() {
   const { request, token, hasRole } = useAuth();
@@ -9,6 +10,7 @@ function DispatchGuidesPage() {
   const [loadingGuides, setLoadingGuides] = useState(false);
   const [uploadingGuide, setUploadingGuide] = useState(false);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
 
@@ -96,6 +98,13 @@ function DispatchGuidesPage() {
     [request, loadGuides]
   );
 
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
+
+  const filteredGuides = useMemo(
+    () => filterDispatchGuides(guides, searchTerm),
+    [guides, searchTerm]
+  );
+
   if (!canManage) {
     return (
       <section className="dashboard-section">
@@ -117,6 +126,15 @@ function DispatchGuidesPage() {
           <p className="muted">Administra los respaldos de ingreso de inventario.</p>
         </div>
         <div className="section-actions">
+          <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="N° de guía, proveedor, fecha..."
+            />
+          </label>
           <button
             type="button"
             className="secondary"
@@ -135,12 +153,13 @@ function DispatchGuidesPage() {
       )}
 
       <DispatchGuideManager
-        guides={guides}
+        guides={filteredGuides}
         onUpload={handleUploadGuide}
         onRefresh={loadGuides}
         onDownload={handleDownloadGuide}
         onDelete={handleDeleteGuide}
         isUploading={uploadingGuide}
+        isFiltered={Boolean(normalizedSearch)}
       />
     </section>
   );

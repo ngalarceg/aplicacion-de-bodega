@@ -68,6 +68,11 @@ small,
   font-weight: 400;
 }
 
+.success-text {
+  color: #107a3b;
+  font-weight: 600;
+}
+
 .small-text {
   font-size: 0.85rem;
 }
