@@ -5,8 +5,10 @@ import chileAtiendeLogo from '../assets/chileatiende-logo.svg';
 
 const NAV_ITEMS = [
   { to: '.', label: 'Inventario', end: true },
+  { to: 'stock', label: 'Consultar stock' },
   { to: 'asignaciones', label: 'Asignaciones', requiresManage: true },
   { to: 'productos/nuevo', label: 'Ingresar producto', requiresManage: true },
+  { to: 'productos/catalogo', label: 'Catálogo de productos', requiresManage: true },
   { to: 'guias', label: 'Guías de despacho', requiresManage: true },
   { to: 'bajas', label: 'Bajas de inventario', requiresManage: true },
 ];

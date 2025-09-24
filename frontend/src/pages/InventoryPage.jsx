@@ -75,6 +75,12 @@ function InventoryPage() {
     [products, selectedProductId]
   );
 
+  const selectedProductName = selectedProduct?.productModel?.name || selectedProduct?.name;
+  const selectedProductPartNumber =
+    selectedProduct?.productModel?.partNumber || selectedProduct?.partNumber;
+  const selectedProductDescription =
+    selectedProduct?.productModel?.description ?? selectedProduct?.description;
+
   const handleFilterChange = (event) => {
     const value = event.target.value;
     setStatusFilter(value);
@@ -171,7 +177,7 @@ function InventoryPage() {
             <>
               <div className="detail-grid">
                 <div>
-                  <strong>Nombre:</strong> {selectedProduct.name}
+                  <strong>Nombre:</strong> {selectedProductName}
                 </div>
                 <div>
                   <strong>Tipo:</strong> {formatType(selectedProduct.type)}
@@ -180,7 +186,7 @@ function InventoryPage() {
                   <strong>N° serie:</strong> {selectedProduct.serialNumber}
                 </div>
                 <div>
-                  <strong>N° parte:</strong> {selectedProduct.partNumber}
+                  <strong>N° parte:</strong> {selectedProductPartNumber}
                 </div>
                 {selectedProduct.type === 'PURCHASED' ? (
                   <div>
@@ -194,9 +200,9 @@ function InventoryPage() {
                 <div>
                   <strong>Guía:</strong> {selectedProduct.dispatchGuide?.guideNumber || '—'}
                 </div>
-                {selectedProduct.description && (
+                {selectedProductDescription && (
                   <div className="full-row">
-                    <strong>Descripción:</strong> {selectedProduct.description}
+                    <strong>Descripción:</strong> {selectedProductDescription}
                   </div>
                 )}
                 <div className="full-row">
@@ -210,8 +216,7 @@ function InventoryPage() {
               {selectedProduct.status === 'ASSIGNED' && selectedProduct.currentAssignment && (
                 <div className="assignment-box">
                   <p>
-                    <strong>{selectedProduct.currentAssignment.assignedTo}</strong> ·{' '}
-                    {selectedProduct.currentAssignment.assignedToAdAccount}
+                    <strong>{selectedProduct.currentAssignment.assignedTo}</strong>
                   </p>
                   <p className="muted">
                     Ubicación: {selectedProduct.currentAssignment.location} ·{' '}

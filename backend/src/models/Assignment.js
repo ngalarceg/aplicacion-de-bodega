@@ -7,7 +7,6 @@ const assignmentSchema = new Schema(
     product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     action: { type: String, enum: ['ASSIGN', 'UNASSIGN'], required: true },
     assignedTo: { type: String, required: true },
-    assignedToAdAccount: { type: String, required: true },
     location: { type: String, required: true },
     assignmentDate: { type: Date, required: true },
     performedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },

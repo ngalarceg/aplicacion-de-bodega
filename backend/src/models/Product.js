@@ -5,7 +5,6 @@ const { Schema } = mongoose;
 const assignmentSnapshotSchema = new Schema(
   {
     assignedTo: String,
-    assignedToAdAccount: String,
     location: String,
     assignmentDate: Date,
   },
@@ -14,6 +13,7 @@ const assignmentSnapshotSchema = new Schema(
 
 const productSchema = new Schema(
   {
+    productModel: { type: Schema.Types.ObjectId, ref: 'ProductModel' },
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
     type: {

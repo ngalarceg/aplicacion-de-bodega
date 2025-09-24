@@ -13,8 +13,6 @@ function AssignmentsPage() {
   const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [assignmentProcessing, setAssignmentProcessing] = useState(false);
-  const [adUsers, setAdUsers] = useState([]);
-  const [adError, setAdError] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
 
@@ -59,27 +57,11 @@ function AssignmentsPage() {
     [request]
   );
 
-  const loadAdUsers = useCallback(async () => {
-    if (!canManage) {
-      setAdUsers([]);
-      return;
-    }
-    try {
-      const users = await request('/ad/users');
-      setAdUsers(users);
-      setAdError('');
-    } catch (error) {
-      setAdError('No se pudieron sincronizar los usuarios de Active Directory.');
-      setAdUsers([]);
-    }
-  }, [canManage, request]);
-
   useEffect(() => {
     if (canManage) {
       loadProducts();
-      loadAdUsers();
     }
-  }, [loadProducts, loadAdUsers, canManage]);
+  }, [loadProducts, canManage]);
 
   useEffect(() => {
     if (selectedProductId && canManage) {
@@ -174,12 +156,6 @@ function AssignmentsPage() {
         </div>
       )}
 
-      {adError && (
-        <div className="card">
-          <strong>Advertencia:</strong> {adError}
-        </div>
-      )}
-
       <div className="dashboard-grid">
         <ProductTable
           products={products}
@@ -192,7 +168,6 @@ function AssignmentsPage() {
             onAssign={handleAssignProduct}
             onUnassign={handleUnassignProduct}
             isProcessing={assignmentProcessing}
-            adUsers={adUsers}
             canManage={canManage}
           />
           <AssignmentHistory history={assignmentHistory} loading={historyLoading} />

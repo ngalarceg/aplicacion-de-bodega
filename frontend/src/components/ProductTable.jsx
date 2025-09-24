@@ -40,6 +40,8 @@ function ProductTable({ products, onSelect, selectedProductId }) {
               </tr>
             )}
             {products.map((product) => {
+              const productName = product.productModel?.name || product.name;
+              const productPartNumber = product.productModel?.partNumber || product.partNumber;
               const isSelected = product._id === selectedProductId;
               return (
                 <tr
@@ -47,10 +49,10 @@ function ProductTable({ products, onSelect, selectedProductId }) {
                   className={isSelected ? 'selected' : ''}
                   onClick={() => onSelect(product._id)}
                 >
-                  <td>{product.name}</td>
+                  <td>{productName}</td>
                   <td>{formatType(product.type)}</td>
                   <td>{product.serialNumber}</td>
-                  <td>{product.partNumber}</td>
+                  <td>{productPartNumber}</td>
                   <td>
                     {product.type === 'PURCHASED'
                       ? product.inventoryNumber || '—'
