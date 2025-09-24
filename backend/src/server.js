@@ -5,7 +5,9 @@ const app = require('./app');
 dotenv.config();
 
 const PORT = process.env.PORT || 4000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bodega';
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  'mongodb+srv://ERPCHA>:ERPCHA@basededatos1.hwq53bl.mongodb.net/?retryWrites=true&w=majority&appName=Basededatos1';
 
 async function start() {
   try {
