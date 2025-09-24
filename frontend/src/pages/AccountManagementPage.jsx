@@ -34,12 +34,17 @@ function AccountManagementPage() {
   const [savingUserId, setSavingUserId] = useState(null);
   const [updateMessage, setUpdateMessage] = useState('');
   const [updateError, setUpdateError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteMessage, setDeleteMessage] = useState('');
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
     setError('');
     setUpdateMessage('');
     setUpdateError('');
+    setDeleteError('');
+    setDeleteMessage('');
     try {
       const data = await request('/users');
       setUsers(data);
@@ -62,6 +67,8 @@ function AccountManagementPage() {
     setFormValues((prev) => ({ ...prev, [name]: value }));
     setFormError('');
     setFormSuccess('');
+    setDeleteError('');
+    setDeleteMessage('');
   };
 
   const handleCreateUser = async (event) => {
@@ -112,6 +119,8 @@ function AccountManagementPage() {
     }));
     setUpdateMessage('');
     setUpdateError('');
+    setDeleteError('');
+    setDeleteMessage('');
   };
 
   const handleSaveUser = async (user) => {
@@ -137,6 +146,8 @@ function AccountManagementPage() {
     setSavingUserId(user._id);
     setUpdateError('');
     setUpdateMessage('');
+    setDeleteError('');
+    setDeleteMessage('');
 
     try {
       const response = await request(`/users/${user._id}`, {
@@ -156,6 +167,42 @@ function AccountManagementPage() {
       setUpdateError(err.message || 'No se pudo actualizar la cuenta.');
     } finally {
       setSavingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    if (!user) {
+      return;
+    }
+
+    if (currentUser?._id === user._id) {
+      setDeleteMessage('');
+      setDeleteError('No puedes eliminar tu propia cuenta.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `¿Eliminar la cuenta de ${user.name}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingUserId(user._id);
+    setDeleteError('');
+    setDeleteMessage('');
+    setUpdateMessage('');
+    setUpdateError('');
+
+    try {
+      await request(`/users/${user._id}`, { method: 'DELETE' });
+      setUsers((prev) => prev.filter((item) => item._id !== user._id));
+      setDeleteMessage('Cuenta eliminada correctamente.');
+    } catch (err) {
+      setDeleteError(err.message || 'No se pudo eliminar la cuenta.');
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -278,6 +325,8 @@ function AccountManagementPage() {
         {error && <p className="error">{error}</p>}
         {updateError && <p className="error">{updateError}</p>}
         {updateMessage && <p className="success-text">{updateMessage}</p>}
+        {deleteError && <p className="error">{deleteError}</p>}
+        {deleteMessage && <p className="success-text">{deleteMessage}</p>}
         <div className="table-responsive">
           <table className="data-table compact">
             <thead>
@@ -353,14 +402,30 @@ function AccountManagementPage() {
                     </td>
                     <td>{updatedLabel}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="secondary compact"
-                        onClick={() => handleSaveUser(user)}
-                        disabled={!hasChanges || isSaving}
-                      >
-                        {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                      </button>
+                      <div className="table-action-buttons">
+                        <button
+                          type="button"
+                          className="secondary compact"
+                          onClick={() => handleSaveUser(user)}
+                          disabled={!hasChanges || isSaving}
+                        >
+                          {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                        </button>
+                        <button
+                          type="button"
+                          className="danger compact"
+                          onClick={() => handleDeleteUser(user)}
+                          disabled={
+                            isSaving ||
+                            deletingUserId === user._id ||
+                            isCurrentUser
+                          }
+                        >
+                          {deletingUserId === user._id
+                            ? 'Eliminando...'
+                            : 'Eliminar cuenta'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

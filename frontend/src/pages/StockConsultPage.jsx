@@ -32,23 +32,6 @@ function StockConsultPage() {
     [summary, searchTerm]
   );
 
-  const totals = useMemo(() => {
-    if (!filteredSummary.length) {
-      return null;
-    }
-    return filteredSummary.reduce(
-      (acc, item) => ({
-        total: acc.total + item.totals.total,
-        available: acc.available + item.totals.available,
-        assigned: acc.assigned + item.totals.assigned,
-        decommissioned: acc.decommissioned + item.totals.decommissioned,
-        purchased: acc.purchased + item.typeBreakdown.purchased,
-        rental: acc.rental + item.typeBreakdown.rental,
-      }),
-      { total: 0, available: 0, assigned: 0, decommissioned: 0, purchased: 0, rental: 0 }
-    );
-  }, [filteredSummary]);
-
   const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
 
   const handleSearchChange = (event) => {
@@ -139,17 +122,6 @@ function StockConsultPage() {
                   <td>{item.typeBreakdown.rental}</td>
                 </tr>
               ))}
-              {totals && filteredSummary.length > 0 && (
-                <tr>
-                  <td colSpan={2}>Totales generales</td>
-                  <td>{totals.total}</td>
-                  <td>{totals.available}</td>
-                  <td>{totals.assigned}</td>
-                  <td>{totals.decommissioned}</td>
-                  <td>{totals.purchased}</td>
-                  <td>{totals.rental}</td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

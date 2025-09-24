@@ -19,6 +19,9 @@ function ProductCatalogPage() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   const sortedModels = useMemo(
     () =>
@@ -103,6 +106,37 @@ function ProductCatalogPage() {
       setSubmitting(false);
     }
   };
+
+  const handleDeleteModel = useCallback(
+    async (model) => {
+      if (!model) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `¿Eliminar el modelo "${model.name}" (${model.partNumber})? Esta acción no se puede deshacer.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setDeletingId(model._id);
+      setActionError('');
+      setActionMessage('');
+
+      try {
+        await request(`/product-models/${model._id}`, { method: 'DELETE' });
+        await loadModels();
+        setActionMessage('Modelo eliminado correctamente.');
+      } catch (err) {
+        setActionError(err.message || 'No se pudo eliminar el modelo.');
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [loadModels, request]
+  );
 
   if (!canManage) {
     return (
@@ -192,6 +226,8 @@ function ProductCatalogPage() {
             <h3>Modelos registrados</h3>
             <p className="muted">Listado de productos disponibles para asignar en el inventario.</p>
           </div>
+          {actionError && <p className="error">{actionError}</p>}
+          {actionMessage && <p className="success-text">{actionMessage}</p>}
           <label className="inline-filter">
             Buscar
             <input
@@ -209,26 +245,27 @@ function ProductCatalogPage() {
                   <th>N° de parte</th>
                   <th>Descripción</th>
                   <th>Creado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="muted">
+                    <td colSpan={5} className="muted">
                       Cargando catálogo...
                     </td>
                   </tr>
                 )}
                 {!loading && sortedModels.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="muted">
+                    <td colSpan={5} className="muted">
                       Aún no hay modelos registrados.
                     </td>
                   </tr>
                 )}
                 {!loading && sortedModels.length > 0 && filteredModels.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="muted">
+                    <td colSpan={5} className="muted">
                       No se encontraron modelos que coincidan con “{searchTerm}”.
                     </td>
                   </tr>
@@ -239,6 +276,16 @@ function ProductCatalogPage() {
                     <td>{model.partNumber}</td>
                     <td>{model.description || '—'}</td>
                     <td>{new Date(model.createdAt).toLocaleDateString('es-CL')}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="danger compact"
+                        onClick={() => handleDeleteModel(model)}
+                        disabled={deletingId === model._id}
+                      >
+                        {deletingId === model._id ? 'Eliminando...' : 'Eliminar'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

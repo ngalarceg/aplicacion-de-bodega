@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { normalizeSearchTerm } from '../utils/search';
 
 const initialState = {
   productModelId: '',
@@ -12,8 +13,30 @@ const initialState = {
 function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) {
   const [values, setValues] = useState(initialState);
   const [error, setError] = useState('');
+  const [modelSearch, setModelSearch] = useState('');
   const hasDispatchGuides = dispatchGuides.length > 0;
   const hasProductModels = productModels.length > 0;
+  const normalizedModelSearch = useMemo(
+    () => normalizeSearchTerm(modelSearch),
+    [modelSearch]
+  );
+  const filteredModels = useMemo(() => {
+    if (!normalizedModelSearch) {
+      return productModels;
+    }
+
+    return productModels.filter((model) => {
+      const name = (model.name || '').toLowerCase();
+      const partNumber = (model.partNumber || '').toLowerCase();
+      const description = (model.description || '').toLowerCase();
+
+      return (
+        name.includes(normalizedModelSearch) ||
+        partNumber.includes(normalizedModelSearch) ||
+        description.includes(normalizedModelSearch)
+      );
+    });
+  }, [normalizedModelSearch, productModels]);
   const selectedModel = useMemo(
     () => productModels.find((model) => model._id === values.productModelId) || null,
     [productModels, values.productModelId]
@@ -45,17 +68,25 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
         return { ...prev, productModelId: '' };
       }
 
-      if (prev.productModelId && productModels.some((model) => model._id === prev.productModelId)) {
+      if (
+        prev.productModelId &&
+        filteredModels.some((model) => model._id === prev.productModelId)
+      ) {
         return prev;
       }
 
-      return { ...prev, productModelId: productModels[0]._id };
+      const fallback = filteredModels[0] || (!normalizedModelSearch ? productModels[0] : null);
+      return fallback ? { ...prev, productModelId: fallback._id } : { ...prev, productModelId: '' };
     });
-  }, [productModels]);
+  }, [productModels, filteredModels, normalizedModelSearch]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleModelSearchChange = (event) => {
+    setModelSearch(event.target.value);
   };
 
   const handleTypeChange = (event) => {
@@ -119,20 +150,34 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
       <div className="form-grid">
         <label className="full-width">
           Modelo de producto
-          <select
-            name="productModelId"
-            value={values.productModelId}
-            onChange={handleChange}
-            required
-            disabled={!hasProductModels}
-          >
-            {productModels.map((model) => (
-              <option key={model._id} value={model._id}>
-                {model.name} — {model.partNumber}
-              </option>
-            ))}
-          </select>
+          <div className="select-search-group">
+            <input
+              type="search"
+              value={modelSearch}
+              onChange={handleModelSearchChange}
+              placeholder="Filtrar por nombre, número de parte o descripción"
+              disabled={!hasProductModels}
+            />
+            <select
+              name="productModelId"
+              value={values.productModelId}
+              onChange={handleChange}
+              required
+              disabled={!hasProductModels || filteredModels.length === 0}
+            >
+              {filteredModels.map((model) => (
+                <option key={model._id} value={model._id}>
+                  {model.name} — {model.partNumber}
+                </option>
+              ))}
+            </select>
+          </div>
         </label>
+        {hasProductModels && normalizedModelSearch && filteredModels.length === 0 && (
+          <p className="muted small-text full-width">
+            No se encontraron modelos que coincidan con “{modelSearch}”.
+          </p>
+        )}
         {selectedModel?.description && (
           <div className="full-width muted small-text">
             <strong>Descripción:</strong> {selectedModel.description}

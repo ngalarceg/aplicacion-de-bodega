@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const { hashPassword } = require('../utils/password');
 
@@ -107,5 +108,46 @@ exports.updateUser = async (req, res) => {
     res
       .status(500)
       .json({ message: 'No se pudieron actualizar los datos del usuario.' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Identificador de usuario inválido.' });
+    }
+
+    if (req.user && req.user._id && req.user._id.equals(id)) {
+      return res
+        .status(400)
+        .json({ message: 'No puedes eliminar tu propia cuenta de acceso.' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    if (user.role === 'ADMIN') {
+      const remainingAdmins = await User.countDocuments({
+        role: 'ADMIN',
+        _id: { $ne: user._id },
+      });
+
+      if (remainingAdmins === 0) {
+        return res
+          .status(400)
+          .json({ message: 'Debe existir al menos un administrador activo.' });
+      }
+    }
+
+    await user.deleteOne();
+
+    res.json({ message: 'Cuenta eliminada correctamente.' });
+  } catch (error) {
+    console.error('deleteUser error', error);
+    res.status(500).json({ message: 'No se pudo eliminar la cuenta.' });
   }
 };

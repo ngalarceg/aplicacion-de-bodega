@@ -556,6 +556,12 @@ button.danger {
   padding: 0.6rem 0.75rem;
 }
 
+.table-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .status {
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
@@ -597,6 +603,11 @@ button.danger {
 .form-grid .actions {
   display: flex;
   gap: 0.75rem;
+}
+
+.select-search-group {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .form-grid .full-width {

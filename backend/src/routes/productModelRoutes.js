@@ -13,4 +13,11 @@ router.post(
   productModelController.createProductModel
 );
 
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('ADMIN', 'MANAGER'),
+  productModelController.deleteProductModel
+);
+
 module.exports = router;
