@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import ProductTable from '../components/ProductTable';
 import { useAuth } from '../hooks/useAuth';
 import { getProductStatusBadge, getProductStatusLabel } from '../utils/productStatus';
+import { filterProductsBySearch, normalizeSearchTerm } from '../utils/search';
 
 function ProductDecommissionPage() {
   const { request, hasRole } = useAuth();
@@ -12,6 +13,7 @@ function ProductDecommissionPage() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
 
@@ -45,21 +47,31 @@ function ProductDecommissionPage() {
     [products]
   );
 
+  const filteredActiveProducts = useMemo(
+    () => filterProductsBySearch(activeProducts, searchTerm),
+    [activeProducts, searchTerm]
+  );
+
+  const filteredDecommissionedProducts = useMemo(
+    () => filterProductsBySearch(decommissionedProducts, searchTerm),
+    [decommissionedProducts, searchTerm]
+  );
+
   useEffect(() => {
     setSelectedProductId((current) => {
-      if (!activeProducts.length) {
+      if (!filteredActiveProducts.length) {
         return null;
       }
-      if (current && activeProducts.some((item) => item._id === current)) {
+      if (current && filteredActiveProducts.some((item) => item._id === current)) {
         return current;
       }
-      return activeProducts[0]._id;
+      return filteredActiveProducts[0]._id;
     });
-  }, [activeProducts]);
+  }, [filteredActiveProducts]);
 
   const selectedProduct = useMemo(
-    () => activeProducts.find((product) => product._id === selectedProductId) || null,
-    [activeProducts, selectedProductId]
+    () => filteredActiveProducts.find((product) => product._id === selectedProductId) || null,
+    [filteredActiveProducts, selectedProductId]
   );
 
   const selectedProductName = selectedProduct?.productModel?.name || selectedProduct?.name;
@@ -68,6 +80,12 @@ function ProductDecommissionPage() {
     setReason('');
     setFormError('');
   }, [selectedProductId]);
+
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -122,6 +140,15 @@ function ProductDecommissionPage() {
           <p className="muted">Registra la baja de equipos e indica el motivo correspondiente.</p>
         </div>
         <div className="section-actions">
+          <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Nombre, serie, motivo..."
+            />
+          </label>
           <button type="button" className="secondary" onClick={loadProducts} disabled={loading}>
             {loading ? 'Actualizando...' : 'Actualizar inventario'}
           </button>
@@ -136,9 +163,10 @@ function ProductDecommissionPage() {
 
       <div className="dashboard-grid secondary">
         <ProductTable
-          products={activeProducts}
+          products={filteredActiveProducts}
           onSelect={setSelectedProductId}
           selectedProductId={selectedProductId}
+          isFiltered={Boolean(normalizedSearch)}
         />
         <div className="card">
           <div className="card-header">
@@ -208,14 +236,16 @@ function ProductDecommissionPage() {
               </tr>
             </thead>
             <tbody>
-              {decommissionedProducts.length === 0 && (
+              {filteredDecommissionedProducts.length === 0 && (
                 <tr>
                   <td colSpan={4} className="muted">
-                    Aún no se registran bajas.
+                    {normalizedSearch
+                      ? 'No hay bajas que coincidan con la búsqueda.'
+                      : 'Aún no se registran bajas.'}
                   </td>
                 </tr>
               )}
-              {decommissionedProducts.map((product) => (
+              {filteredDecommissionedProducts.map((product) => (
                 <tr key={product._id}>
                   <td>{product.name}</td>
                   <td>{product.serialNumber}</td>

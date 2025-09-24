@@ -6,7 +6,15 @@ const initialState = {
   dispatchDate: '',
 };
 
-function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, onDelete, isUploading }) {
+function DispatchGuideManager({
+  guides,
+  onUpload,
+  onRefresh,
+  onDownload,
+  onDelete,
+  isUploading,
+  isFiltered = false,
+}) {
   const [values, setValues] = useState(initialState);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -100,7 +108,9 @@ function DispatchGuideManager({ guides, onUpload, onRefresh, onDownload, onDelet
             {guides.length === 0 && (
               <tr>
                 <td colSpan={5} className="muted">
-                  No hay guías cargadas.
+                  {isFiltered
+                    ? 'No hay guías que coincidan con la búsqueda.'
+                    : 'No hay guías cargadas.'}
                 </td>
               </tr>
             )}
@@ -138,6 +148,7 @@ DispatchGuideManager.defaultProps = {
   onDownload: () => {},
   onDelete: () => {},
   isUploading: false,
+  isFiltered: false,
 };
 
 export default DispatchGuideManager;

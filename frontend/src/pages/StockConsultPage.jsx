@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { filterStockSummary, normalizeSearchTerm } from '../utils/search';
 
 function StockConsultPage() {
   const { request } = useAuth();
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -25,11 +27,16 @@ function StockConsultPage() {
     loadSummary();
   }, [loadSummary]);
 
+  const filteredSummary = useMemo(
+    () => filterStockSummary(summary, searchTerm),
+    [summary, searchTerm]
+  );
+
   const totals = useMemo(() => {
-    if (!summary.length) {
+    if (!filteredSummary.length) {
       return null;
     }
-    return summary.reduce(
+    return filteredSummary.reduce(
       (acc, item) => ({
         total: acc.total + item.totals.total,
         available: acc.available + item.totals.available,
@@ -40,7 +47,13 @@ function StockConsultPage() {
       }),
       { total: 0, available: 0, assigned: 0, decommissioned: 0, purchased: 0, rental: 0 }
     );
-  }, [summary]);
+  }, [filteredSummary]);
+
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   return (
     <section className="dashboard-section">
@@ -52,6 +65,15 @@ function StockConsultPage() {
           </p>
         </div>
         <div className="section-actions">
+          <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Producto, parte, descripción..."
+            />
+          </label>
           <button type="button" className="secondary" onClick={loadSummary} disabled={loading}>
             {loading ? 'Actualizando...' : 'Actualizar'}
           </button>
@@ -93,14 +115,16 @@ function StockConsultPage() {
                   </td>
                 </tr>
               )}
-              {!loading && summary.length === 0 && (
+              {!loading && filteredSummary.length === 0 && (
                 <tr>
                   <td colSpan={8} className="muted">
-                    Aún no hay unidades registradas.
+                    {normalizedSearch
+                      ? 'No hay productos que coincidan con la búsqueda.'
+                      : 'Aún no hay unidades registradas.'}
                   </td>
                 </tr>
               )}
-              {summary.map((item) => (
+              {filteredSummary.map((item) => (
                 <tr key={`${item.productModelId || 'sin-modelo'}-${item.partNumber || 'sin-parte'}`}>
                   <td>
                     <strong>{item.name}</strong>
@@ -115,7 +139,7 @@ function StockConsultPage() {
                   <td>{item.typeBreakdown.rental}</td>
                 </tr>
               ))}
-              {totals && summary.length > 0 && (
+              {totals && filteredSummary.length > 0 && (
                 <tr>
                   <td colSpan={2}>Totales generales</td>
                   <td>{totals.total}</td>

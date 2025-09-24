@@ -11,15 +11,26 @@ const NAV_ITEMS = [
   { to: 'productos/catalogo', label: 'Catálogo de productos', requiresManage: true },
   { to: 'guias', label: 'Guías de despacho', requiresManage: true },
   { to: 'bajas', label: 'Bajas de inventario', requiresManage: true },
+  { to: 'administracion/cuentas', label: 'Administrar cuentas', requiresAdmin: true },
 ];
 
 function Dashboard() {
   const { user, logout, hasRole } = useAuth();
   const canManage = hasRole('ADMIN', 'MANAGER');
+  const isAdmin = hasRole('ADMIN');
 
   const navItems = useMemo(
-    () => NAV_ITEMS.filter((item) => !item.requiresManage || canManage),
-    [canManage]
+    () =>
+      NAV_ITEMS.filter((item) => {
+        if (item.requiresAdmin) {
+          return isAdmin;
+        }
+        if (item.requiresManage) {
+          return canManage;
+        }
+        return true;
+      }),
+    [canManage, isAdmin]
   );
 
   return (

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import ProductTable from '../components/ProductTable';
 import { useAuth } from '../hooks/useAuth';
 import { getProductStatusBadge, getProductStatusLabel } from '../utils/productStatus';
+import { filterProductsBySearch, normalizeSearchTerm } from '../utils/search';
 
 const STATUS_FILTERS = [
   { value: 'ALL', label: 'Todos' },
@@ -28,18 +29,9 @@ function InventoryPage() {
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [deleting, setDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const canManage = hasRole('ADMIN', 'MANAGER');
-
-  const applyFilter = useCallback(
-    (list, filterValue = statusFilter) => {
-      if (filterValue === 'ALL') {
-        return list;
-      }
-      return list.filter((item) => item.status === filterValue);
-    },
-    [statusFilter]
-  );
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -47,33 +39,40 @@ function InventoryPage() {
     try {
       const data = await request('/products');
       setProducts(data);
-      const filtered = applyFilter(data);
-      setSelectedProductId((current) => {
-        if (!filtered.length) {
-          return null;
-        }
-        if (current && filtered.some((item) => item._id === current)) {
-          return current;
-        }
-        return filtered[0]._id;
-      });
     } catch (err) {
       setError(err.message || 'No se pudo obtener el inventario.');
     } finally {
       setLoading(false);
     }
-  }, [request, applyFilter]);
+  }, [request]);
 
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
-  const filteredProducts = useMemo(() => applyFilter(products), [products, applyFilter]);
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(products, searchTerm, { status: statusFilter }),
+    [products, searchTerm, statusFilter]
+  );
+
+  useEffect(() => {
+    setSelectedProductId((current) => {
+      if (!filteredProducts.length) {
+        return null;
+      }
+      if (current && filteredProducts.some((item) => item._id === current)) {
+        return current;
+      }
+      return filteredProducts[0]._id;
+    });
+  }, [filteredProducts]);
 
   const selectedProduct = useMemo(
-    () => products.find((product) => product._id === selectedProductId) || null,
-    [products, selectedProductId]
+    () => filteredProducts.find((product) => product._id === selectedProductId) || null,
+    [filteredProducts, selectedProductId]
   );
+
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
 
   const selectedProductName = selectedProduct?.productModel?.name || selectedProduct?.name;
   const selectedProductPartNumber =
@@ -82,18 +81,11 @@ function InventoryPage() {
     selectedProduct?.productModel?.description ?? selectedProduct?.description;
 
   const handleFilterChange = (event) => {
-    const value = event.target.value;
-    setStatusFilter(value);
-    setSelectedProductId((current) => {
-      const filtered = applyFilter(products, value);
-      if (!filtered.length) {
-        return null;
-      }
-      if (current && filtered.some((item) => item._id === current)) {
-        return current;
-      }
-      return filtered[0]._id;
-    });
+    setStatusFilter(event.target.value);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
   };
 
   const handleDeleteProduct = useCallback(async () => {
@@ -134,6 +126,15 @@ function InventoryPage() {
         </div>
         <div className="section-actions">
           <label className="inline-filter">
+            Buscar
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Nombre, serie, estado..."
+            />
+          </label>
+          <label className="inline-filter">
             Estado
             <select value={statusFilter} onChange={handleFilterChange}>
               {STATUS_FILTERS.map((filter) => (
@@ -160,6 +161,7 @@ function InventoryPage() {
           products={filteredProducts}
           onSelect={setSelectedProductId}
           selectedProductId={selectedProductId}
+          isFiltered={Boolean(normalizedSearch)}
         />
         <div className="card">
           <div className="card-header">
