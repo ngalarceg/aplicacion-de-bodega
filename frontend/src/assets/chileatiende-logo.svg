@@ -1,21 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 300" role="img">
-  <title>ChileAtiende</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-labelledby="title desc">
+  <title id="title">ChileAtiende</title>
+  <desc id="desc">Logotipo oficial del programa ChileAtiende con isotipo azul y rojo acompañado del texto corporativo.</desc>
   <defs>
-    <clipPath id="roundedIcon">
-      <rect x="45" y="30" width="170" height="170" rx="22" ry="22" />
+    <clipPath id="iconClip">
+      <rect x="36" y="32" width="208" height="196" rx="28" ry="28" />
     </clipPath>
   </defs>
-  <g clip-path="url(#roundedIcon)">
-    <rect x="45" y="30" width="170" height="170" fill="#e5253e" />
-    <rect x="45" y="30" width="85" height="170" fill="#0057a6" />
-    <polygon fill="#ffffff" points="90 50 94.5 62 107 62 97 70 100 82 90 75 80 82 83 70 73 62 85.5 62" />
-    <circle cx="130" cy="116" r="24" fill="#ffffff" />
-    <path d="M130 140c30 0 48 18 48 50v32H82v-32c0-32 18-50 48-50z" fill="#ffffff" />
-    <circle cx="174" cy="154" r="16" fill="#ffffff" opacity="0.92" />
-    <path d="M174 170c18 0 28 11 28 29v23h-56v-23c0-18 10-29 28-29z" fill="#ffffff" opacity="0.92" />
-    <circle cx="98" cy="162" r="13" fill="#ffffff" opacity="0.9" />
-    <path d="M98 174c15 0 23 9 23 24v22H75v-22c0-15 8-24 23-24z" fill="#ffffff" opacity="0.9" />
+  <rect x="8" y="12" width="744" height="236" rx="40" ry="40" fill="#ffffff" stroke="#e0e6f0" stroke-width="2.5" />
+  <g clip-path="url(#iconClip)">
+    <rect x="36" y="32" width="208" height="196" fill="#0b2f6d" />
+    <rect x="36" y="160" width="208" height="68" fill="#e52531" />
+    <polygon points="88 72 95.8 95.4 120 95.4 100.6 108.6 108.4 132 88 117.6 67.6 132 75.4 108.6 56 95.4 80.2 95.4" fill="#ffffff" />
+    <path d="M164.8 96.4a24 24 0 1 0-48 0 24 24 0 0 0 48 0z" fill="#ffffff" />
+    <path d="M84 168c0-34 22.2-56 52.8-56s52.8 22 52.8 56v52H84z" fill="#ffffff" />
+    <path d="M192 128.6a18 18 0 1 0-36 0 18 18 0 0 0 36 0z" fill="#ffffff" />
+    <path d="M156 180c0-22 14.4-36 36-36s36 14 36 36v40h-72z" fill="#ffffff" opacity="0.92" />
   </g>
-  <text x="130" y="244" text-anchor="middle" font-family="'Montserrat', 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#0057a6">Chile</text>
-  <text x="130" y="286" text-anchor="middle" font-family="'Montserrat', 'Segoe UI', sans-serif" font-size="44" font-weight="700" fill="#0057a6">Atiende</text>
+  <g fill="#0b2f6d" font-family="'Montserrat', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-weight="700">
+    <text x="276" y="142" font-size="72">Chile</text>
+    <text x="470" y="142" font-size="72" fill="#4f5b6b">Atiende</text>
+  </g>
 </svg>
