@@ -193,8 +193,11 @@ function ProductDecommissionPage() {
               </div>
               {selectedProduct.status === 'ASSIGNED' && selectedProduct.currentAssignment && (
                 <div className="full-width muted small-text">
-                  Actualmente asignado a {selectedProduct.currentAssignment.assignedTo} en{' '}
-                  {selectedProduct.currentAssignment.location}.
+                  Actualmente asignado a {selectedProduct.currentAssignment.assignedTo}
+                  {selectedProduct.currentAssignment.assignedEmail
+                    ? ` (${selectedProduct.currentAssignment.assignedEmail})`
+                    : ''}{' '}
+                  en {selectedProduct.currentAssignment.location}.
                 </div>
               )}
               <label className="full-width">

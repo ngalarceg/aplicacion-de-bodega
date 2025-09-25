@@ -10,6 +10,7 @@ function AssignmentHistory({ history, loading }) {
             <tr>
               <th>Acción</th>
               <th>Usuario asignado</th>
+              <th>Correo electrónico</th>
               <th>Ubicación</th>
               <th>Fecha</th>
               <th>Registrado por</th>
@@ -19,14 +20,14 @@ function AssignmentHistory({ history, loading }) {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   Cargando movimientos...
                 </td>
               </tr>
             )}
             {!loading && history.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No hay movimientos registrados.
                 </td>
               </tr>
@@ -39,6 +40,7 @@ function AssignmentHistory({ history, loading }) {
                   </span>
                 </td>
                 <td>{item.assignedTo}</td>
+                <td>{item.assignedEmail || '—'}</td>
                 <td>{item.location}</td>
                 <td>{new Date(item.assignmentDate).toLocaleString('es-CL')}</td>
                 <td>{item.performedBy?.name || '—'}</td>

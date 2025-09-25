@@ -220,6 +220,11 @@ function InventoryPage() {
                   <p>
                     <strong>{selectedProduct.currentAssignment.assignedTo}</strong>
                   </p>
+                  {selectedProduct.currentAssignment.assignedEmail && (
+                    <p className="muted small-text">
+                      {selectedProduct.currentAssignment.assignedEmail}
+                    </p>
+                  )}
                   <p className="muted">
                     Ubicación: {selectedProduct.currentAssignment.location} ·{' '}
                     {new Date(

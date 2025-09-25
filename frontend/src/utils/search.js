@@ -66,6 +66,7 @@ function getProductSearchFields(product) {
     product.dispatchGuide?.guideNumber,
     product.dispatchGuide?.vendor,
     product.currentAssignment?.assignedTo,
+    product.currentAssignment?.assignedEmail,
     product.currentAssignment?.location,
     product.decommissionReason,
     product.decommissionedBy?.name,

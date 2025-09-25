@@ -71,10 +71,15 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
                   </td>
                   <td>
                     {product.status === 'ASSIGNED' && product.currentAssignment ? (
-                      <span>
-                        {product.currentAssignment.assignedTo}{' '}
-                        <span className="muted">({product.currentAssignment.location})</span>
-                      </span>
+                      <div>
+                        <div>{product.currentAssignment.assignedTo}</div>
+                        {product.currentAssignment.assignedEmail && (
+                          <div className="muted small-text">
+                            {product.currentAssignment.assignedEmail}
+                          </div>
+                        )}
+                        <div className="muted">({product.currentAssignment.location})</div>
+                      </div>
                     ) : product.status === 'DECOMMISSIONED' ? (
                       <span className="muted">No disponible</span>
                     ) : (

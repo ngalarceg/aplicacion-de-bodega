@@ -5,6 +5,7 @@ const { Schema } = mongoose;
 const assignmentSnapshotSchema = new Schema(
   {
     assignedTo: String,
+    assignedEmail: String,
     location: String,
     assignmentDate: Date,
   },
