@@ -8,13 +8,23 @@ function resolveDefaultApiUrl() {
     return configuredApiUrl;
   }
 
-  if (isDevEnvironment) {
-    return 'http://localhost:4000/api';
-  }
-
   if (isBrowser && window.location) {
-    const { protocol, host } = window.location;
-    return `${protocol}//${host}/api`;
+    const { protocol, hostname, host } = window.location;
+    const normalizedProtocol = protocol === 'https:' ? 'https:' : 'http:';
+    const isLocalHostname =
+      hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+
+    if (isDevEnvironment) {
+      const devPort = env.VITE_DEV_BACKEND_PORT || '4000';
+
+      if (!isLocalHostname) {
+        return `${normalizedProtocol}//${hostname}:${devPort}/api`;
+      }
+
+      return `${normalizedProtocol}//localhost:${devPort}/api`;
+    }
+
+    return `${normalizedProtocol}//${host}/api`;
   }
 
   return 'http://localhost:4000/api';
