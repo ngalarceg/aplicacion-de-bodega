@@ -3,6 +3,7 @@ import { getProductStatusBadge, getProductStatusLabel, isDecommissioned } from '
 
 const emptyState = {
   assignedTo: '',
+  assignedEmail: '',
   location: '',
   assignmentDate: '',
   notes: '',
@@ -58,7 +59,7 @@ function ProductAssignmentPanel({
       return;
     }
 
-    if (!values.assignedTo || !values.location) {
+    if (!values.assignedTo || !values.assignedEmail || !values.location) {
       setError('Completa los campos obligatorios.');
       return;
     }
@@ -66,6 +67,7 @@ function ProductAssignmentPanel({
     try {
       await onAssign({
         assignedTo: values.assignedTo,
+        assignedEmail: values.assignedEmail,
         location: values.location,
         assignmentDate: values.assignmentDate || undefined,
         notes: values.notes || undefined,
@@ -151,6 +153,9 @@ function ProductAssignmentPanel({
             <p>
               <strong>{currentAssignment.assignedTo}</strong>
             </p>
+            {currentAssignment.assignedEmail && (
+              <p className="muted small-text">{currentAssignment.assignedEmail}</p>
+            )}
             <p className="muted">
               Ubicación: {currentAssignment.location} ·{' '}
               {new Date(currentAssignment.assignmentDate).toLocaleString('es-CL')}
@@ -180,9 +185,9 @@ function ProductAssignmentPanel({
         ) : !isProductAvailableForAssignment ? (
           <p className="muted">Debes liberar el producto antes de asignarlo a otra persona.</p>
         ) : canManage ? (
-            <form className="form-grid" onSubmit={handleAssign}>
-              <label>
-                Usuario
+          <form className="form-grid" onSubmit={handleAssign}>
+            <label>
+              Usuario
               <input
                 name="assignedTo"
                 value={values.assignedTo}
@@ -190,9 +195,20 @@ function ProductAssignmentPanel({
                 placeholder="Nombre del colaborador"
                 required
               />
-              </label>
-              <label>
-                Ubicación
+            </label>
+            <label>
+              Correo electrónico
+              <input
+                type="email"
+                name="assignedEmail"
+                value={values.assignedEmail}
+                onChange={handleChange}
+                placeholder="correo@empresa.cl"
+                required
+              />
+            </label>
+            <label>
+              Ubicación
               <input
                 name="location"
                 value={values.location}

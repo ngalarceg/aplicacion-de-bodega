@@ -216,10 +216,16 @@ exports.assignProduct = async (req, res) => {
       return res.status(400).json({ message: 'Identificador inválido.' });
     }
 
-    const { assignedTo, location, assignmentDate, notes } = req.body;
+    const { assignedTo, assignedEmail, location, assignmentDate, notes } = req.body;
 
-    if (!assignedTo || !location) {
-      return res.status(400).json({ message: 'Usuario y ubicación son obligatorios.' });
+    const sanitizedAssignedTo = typeof assignedTo === 'string' ? assignedTo.trim() : '';
+    const sanitizedAssignedEmail = typeof assignedEmail === 'string' ? assignedEmail.trim() : '';
+    const sanitizedLocation = typeof location === 'string' ? location.trim() : '';
+
+    if (!sanitizedAssignedTo || !sanitizedAssignedEmail || !sanitizedLocation) {
+      return res
+        .status(400)
+        .json({ message: 'Usuario, correo electrónico y ubicación son obligatorios.' });
     }
 
     const product = await Product.findById(req.params.id);
@@ -242,8 +248,9 @@ exports.assignProduct = async (req, res) => {
     const assignment = await Assignment.create({
       product: product._id,
       action: 'ASSIGN',
-      assignedTo,
-      location,
+      assignedTo: sanitizedAssignedTo,
+      assignedEmail: sanitizedAssignedEmail,
+      location: sanitizedLocation,
       assignmentDate: effectiveAssignmentDate,
       performedBy: req.user._id,
       notes,
@@ -252,8 +259,9 @@ exports.assignProduct = async (req, res) => {
     await assignment.populate('performedBy', 'name email role');
 
     product.currentAssignment = {
-      assignedTo,
-      location,
+      assignedTo: sanitizedAssignedTo,
+      assignedEmail: sanitizedAssignedEmail,
+      location: sanitizedLocation,
       assignmentDate: effectiveAssignmentDate,
     };
 
@@ -283,6 +291,7 @@ exports.unassignProduct = async (req, res) => {
     }
 
     const { location, assignmentDate, notes } = req.body;
+    const sanitizedLocation = typeof location === 'string' ? location.trim() : '';
 
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -303,7 +312,8 @@ exports.unassignProduct = async (req, res) => {
       product: product._id,
       action: 'UNASSIGN',
       assignedTo: product.currentAssignment.assignedTo,
-      location: location || product.currentAssignment.location,
+      assignedEmail: product.currentAssignment.assignedEmail,
+      location: sanitizedLocation || product.currentAssignment.location,
       assignmentDate: effectiveAssignmentDate,
       performedBy: req.user._id,
       notes,
