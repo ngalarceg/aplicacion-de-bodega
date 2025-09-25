@@ -264,7 +264,10 @@ exports.assignProduct = async (req, res) => {
 
     await product.save();
 
-    const updatedProduct = await product.populate('dispatchGuide').populate('productModel');
+    const updatedProduct = await product.populate([
+      { path: 'dispatchGuide' },
+      { path: 'productModel' },
+    ]);
 
     res.json({ product: updatedProduct, assignment });
   } catch (error) {
@@ -312,7 +315,10 @@ exports.unassignProduct = async (req, res) => {
     product.status = 'AVAILABLE';
     await product.save();
 
-    const updatedProduct = await product.populate('dispatchGuide').populate('productModel');
+    const updatedProduct = await product.populate([
+      { path: 'dispatchGuide' },
+      { path: 'productModel' },
+    ]);
 
     res.json({ product: updatedProduct, assignment });
   } catch (error) {
@@ -356,9 +362,10 @@ exports.decommissionProduct = async (req, res) => {
 
     await product.save();
 
-    const populated = await product
-      .populate('dispatchGuide')
-      .populate('decommissionedBy', 'name email role');
+    const populated = await product.populate([
+      { path: 'dispatchGuide' },
+      { path: 'decommissionedBy', select: 'name email role' },
+    ]);
 
     res.json(populated);
   } catch (error) {
