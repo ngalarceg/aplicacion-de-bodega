@@ -1,5 +1,18 @@
+const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
+const isBrowser = typeof window !== 'undefined';
+const isDevEnvironment = Boolean(env.DEV);
+const configuredApiUrl = env.VITE_API_URL;
+
 function resolveDefaultApiUrl() {
-  if (typeof window !== 'undefined' && window.location) {
+  if (configuredApiUrl) {
+    return configuredApiUrl;
+  }
+
+  if (isDevEnvironment) {
+    return 'http://localhost:4000/api';
+  }
+
+  if (isBrowser && window.location) {
     const { protocol, host } = window.location;
     return `${protocol}//${host}/api`;
   }
@@ -7,7 +20,7 @@ function resolveDefaultApiUrl() {
   return 'http://localhost:4000/api';
 }
 
-const rawApiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
+const rawApiUrl = resolveDefaultApiUrl();
 const API_URL = rawApiUrl.replace(/\/+$/, '');
 
 async function parseResponse(response) {
@@ -35,11 +48,22 @@ export async function apiRequest(path, { method = 'GET', token, data, formData }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
-  const response = await fetch(`${API_URL}${normalizedPath}`, {
-    method,
-    headers,
-    body,
-  });
+  let response;
+
+  try {
+    response = await fetch(`${API_URL}${normalizedPath}`, {
+      method,
+      headers,
+      body,
+    });
+  } catch (networkError) {
+    const error = new Error(
+      'No se pudo establecer conexión con el servidor. Verifica que el backend esté disponible.'
+    );
+    error.cause = networkError;
+    error.isNetworkError = true;
+    throw error;
+  }
 
   if (!response.ok) {
     const errorPayload = await parseResponse(response).catch(() => ({}));
