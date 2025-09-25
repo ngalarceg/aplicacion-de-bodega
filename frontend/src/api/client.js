@@ -1,4 +1,14 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+function resolveDefaultApiUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    const { protocol, host } = window.location;
+    return `${protocol}//${host}/api`;
+  }
+
+  return 'http://localhost:4000/api';
+}
+
+const rawApiUrl = import.meta.env.VITE_API_URL || resolveDefaultApiUrl();
+const API_URL = rawApiUrl.replace(/\/+$/, '');
 
 async function parseResponse(response) {
   const contentType = response.headers.get('content-type');
@@ -23,7 +33,9 @@ export async function apiRequest(path, { method = 'GET', token, data, formData }
     body = JSON.stringify(data);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  const response = await fetch(`${API_URL}${normalizedPath}`, {
     method,
     headers,
     body,
