@@ -5,6 +5,9 @@
   font-family: 'Work Sans', 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #f3f7fb;
   color: #0f2640;
+  --layout-max-width: 1200px;
+  --layout-horizontal-padding: clamp(1rem, 4vw, 2.25rem);
+  --layout-vertical-padding: clamp(1.9rem, 4vw, 2.75rem);
   --primary-900: #0b2f63;
   --primary-800: #0c3c75;
   --primary-700: #005ba8;
@@ -330,12 +333,13 @@ button.danger {
 }
 
 .dashboard {
-  padding: 2.75rem 2rem 3.5rem;
-  max-width: 1200px;
+  width: min(100%, var(--layout-max-width));
   margin: 0 auto;
+  padding: var(--layout-vertical-padding) var(--layout-horizontal-padding)
+    clamp(2.5rem, 6vw, 3.5rem);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
 }
 
 .dashboard-hero {
@@ -343,10 +347,11 @@ button.danger {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
+  flex-wrap: wrap;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
   background: linear-gradient(120deg, var(--primary-800), var(--primary-500));
   color: #ffffff;
-  padding: 2.75rem 3rem;
+  padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.25rem, 5vw, 3rem);
   border-radius: 28px;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -364,8 +369,9 @@ button.danger {
 .dashboard-brand {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: clamp(1rem, 3vw, 1.5rem);
   z-index: 1;
+  flex: 1 1 280px;
 }
 
 .dashboard-brand-logo {
@@ -391,12 +397,13 @@ button.danger {
 .dashboard-user {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: clamp(1rem, 3vw, 1.5rem);
   background: rgba(255, 255, 255, 0.16);
-  padding: 1.5rem 1.75rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 1.75rem);
   border-radius: 20px;
   backdrop-filter: blur(8px);
   z-index: 1;
+  flex: 1 1 280px;
 }
 
 .dashboard-user-hello {
@@ -432,12 +439,19 @@ button.danger {
 .dashboard-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
   background: rgba(255, 255, 255, 0.95);
   border-radius: 22px;
-  padding: 0.9rem 1rem;
+  padding: 0.9rem clamp(0.75rem, 3vw, 1.25rem);
   box-shadow: var(--shadow-md);
   border: 1px solid rgba(11, 60, 117, 0.08);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dashboard-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .dashboard-nav-link {
@@ -449,6 +463,8 @@ button.danger {
   text-decoration: none;
   background: rgba(0, 148, 217, 0.08);
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dashboard-nav-link:hover {
@@ -504,12 +520,17 @@ button.danger {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 1.75rem;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: clamp(1.25rem, 3vw, 1.75rem);
+  align-items: flex-start;
 }
 
 .dashboard-grid.secondary {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-grid > * {
+  min-width: 0;
 }
 
 .table-responsive {
@@ -673,9 +694,18 @@ button.danger {
     width: 100%;
     justify-content: space-between;
   }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 960px) {
+  :root {
+    --layout-horizontal-padding: clamp(1rem, 6vw, 1.5rem);
+    --layout-vertical-padding: clamp(2rem, 6vw, 2.5rem);
+  }
+
   .auth-card {
     grid-template-columns: 1fr;
   }
@@ -688,17 +718,12 @@ button.danger {
     padding: 2.5rem 2rem;
   }
 
-  .dashboard {
-    padding: 2.5rem 1.5rem 3rem;
-  }
-
-  .dashboard-grid,
-  .dashboard-grid.secondary {
-    grid-template-columns: 1fr;
-  }
-
   .dashboard-nav {
     justify-content: flex-start;
+  }
+
+  .dashboard {
+    padding-bottom: clamp(2.5rem, 7vw, 3.1rem);
   }
 }
 
@@ -728,16 +753,13 @@ button.danger {
 }
 
 @media (max-width: 520px) {
+  :root {
+    --layout-horizontal-padding: clamp(0.75rem, 7vw, 1.25rem);
+    --layout-vertical-padding: clamp(1.8rem, 6vw, 2.3rem);
+  }
+
   .auth-form {
     padding: 2rem 1.5rem;
-  }
-
-  .dashboard {
-    padding: 2.25rem 1rem 2.75rem;
-  }
-
-  .dashboard-hero {
-    padding: 2.5rem 2rem;
   }
 
   .dashboard-user {
