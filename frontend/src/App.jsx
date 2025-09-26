@@ -11,6 +11,7 @@ import ProductDecommissionPage from './pages/ProductDecommissionPage';
 import StockConsultPage from './pages/StockConsultPage';
 import ProductCatalogPage from './pages/ProductCatalogPage';
 import AccountManagementPage from './pages/AccountManagementPage';
+import ExternalDecommissionActsPage from './pages/ExternalDecommissionActsPage';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -36,6 +37,7 @@ function App() {
         <Route path="productos/catalogo" element={<ProductCatalogPage />} />
         <Route path="guias" element={<DispatchGuidesPage />} />
         <Route path="bajas" element={<ProductDecommissionPage />} />
+        <Route path="bajas/externas" element={<ExternalDecommissionActsPage />} />
         <Route path="administracion/cuentas" element={<AccountManagementPage />} />
       </Route>
       <Route

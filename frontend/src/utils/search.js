@@ -124,6 +124,31 @@ export function filterDispatchGuides(guides, term) {
   );
 }
 
+export function filterExternalDecommissionActs(acts, term) {
+  const normalizedTerm = normalizeSearchTerm(term);
+  const list = Array.isArray(acts) ? acts : [];
+
+  if (!normalizedTerm) {
+    return list;
+  }
+
+  return list.filter((act) =>
+    matchesAnyField(
+      [
+        act.inventoryManager,
+        act.productName,
+        act.serialNumber,
+        act.operationalUnit,
+        act.fileName,
+        act.uploadedBy?.name,
+        act.uploadedBy?.email,
+        toLocaleDate(act.recordDate),
+      ],
+      normalizedTerm
+    )
+  );
+}
+
 export function filterStockSummary(summary, term) {
   const normalizedTerm = normalizeSearchTerm(term);
   const list = Array.isArray(summary) ? summary : [];
