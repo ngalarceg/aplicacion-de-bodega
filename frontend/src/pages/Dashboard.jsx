@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: 'productos/catalogo', label: 'Catálogo de productos', requiresManage: true },
   { to: 'guias', label: 'Guías de despacho', requiresManage: true },
   { to: 'bajas', label: 'Bajas de inventario', requiresManage: true },
+  { to: 'bajas/externas', label: 'Actas de bajas externas', requiresManage: true },
   { to: 'administracion/cuentas', label: 'Administrar cuentas', requiresAdmin: true },
 ];
 

@@ -6,6 +6,7 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const dispatchGuideRoutes = require('./routes/dispatchGuideRoutes');
+const externalDecommissionActRoutes = require('./routes/externalDecommissionActRoutes');
 const activeDirectoryRoutes = require('./routes/activeDirectoryRoutes');
 const productModelRoutes = require('./routes/productModelRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/product-models', productModelRoutes);
 app.use('/api/dispatch-guides', dispatchGuideRoutes);
+app.use('/api/external-decommission-acts', externalDecommissionActRoutes);
 app.use('/api/ad', activeDirectoryRoutes);
 app.use('/api/users', userRoutes);
 
