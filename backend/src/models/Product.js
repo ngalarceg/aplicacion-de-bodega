@@ -22,7 +22,13 @@ const productSchema = new Schema(
       enum: ['PURCHASED', 'RENTAL'],
       required: true,
     },
-    serialNumber: { type: String, required: true, trim: true },
+    isSerialized: { type: Boolean, default: true },
+    serialNumber: { type: String, trim: true },
+    quantity: {
+      type: Number,
+      min: [1, 'La cantidad debe ser al menos 1.'],
+      default: 1,
+    },
     partNumber: { type: String, required: true, trim: true },
     inventoryNumber: { type: String, trim: true },
     rentalId: { type: String, trim: true },
@@ -41,6 +47,14 @@ const productSchema = new Schema(
   { timestamps: true }
 );
 
-productSchema.index({ serialNumber: 1 }, { unique: true });
+productSchema.index(
+  { serialNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      serialNumber: { $type: 'string', $ne: '' },
+    },
+  }
+);
 
 module.exports = mongoose.model('Product', productSchema);

@@ -54,6 +54,37 @@ function ProductEntryPage() {
     async (payload) => {
       setCreatingProduct(true);
       try {
+        if (payload.isSerialized === false) {
+          const bulkPayload = {
+            productModelId: payload.productModelId,
+            type: payload.type,
+            dispatchGuideId: payload.dispatchGuideId,
+            quantity: payload.quantity,
+            isSerialized: false,
+          };
+
+          if (payload.type === 'PURCHASED' && payload.inventoryNumber) {
+            bulkPayload.inventoryNumber = payload.inventoryNumber;
+          }
+
+          if (payload.type === 'RENTAL' && payload.rentalId) {
+            bulkPayload.rentalId = payload.rentalId;
+          }
+
+          await request('/products', {
+            method: 'POST',
+            data: bulkPayload,
+          });
+
+          window.alert(
+            payload.quantity === 1
+              ? 'Se registró 1 unidad sin número de serie.'
+              : `Se registraron ${payload.quantity} unidades sin número de serie.`
+          );
+          window.location.reload();
+          return;
+        }
+
         const serialCount = payload.serialNumbers?.length || 0;
 
         if (!serialCount) {
@@ -67,6 +98,7 @@ function ProductEntryPage() {
             type: payload.type,
             serialNumber,
             dispatchGuideId: payload.dispatchGuideId,
+            isSerialized: true,
           };
 
           if (payload.type === 'PURCHASED' && payload.inventoryNumber) {

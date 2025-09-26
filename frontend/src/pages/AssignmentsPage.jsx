@@ -23,15 +23,18 @@ function AssignmentsPage() {
     setProductsError('');
     try {
       const data = await request('/products?status=AVAILABLE,ASSIGNED');
-      setProducts(data);
+      const serializedProducts = Array.isArray(data)
+        ? data.filter((item) => item?.isSerialized !== false)
+        : [];
+      setProducts(serializedProducts);
       setSelectedProductId((current) => {
-        if (!data.length) {
+        if (!serializedProducts.length) {
           return null;
         }
-        if (current && data.some((item) => item._id === current)) {
+        if (current && serializedProducts.some((item) => item._id === current)) {
           return current;
         }
-        return data[0]._id;
+        return serializedProducts[0]._id;
       });
     } catch (error) {
       setProductsError(error.message || 'No se pudo obtener el inventario disponible.');

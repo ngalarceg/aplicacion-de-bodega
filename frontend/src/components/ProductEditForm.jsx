@@ -5,6 +5,8 @@ function buildInitialState(product) {
     return {
       productModelId: '',
       serialNumber: '',
+      quantity: '1',
+      isSerialized: true,
       inventoryNumber: '',
       rentalId: '',
       dispatchGuideId: '',
@@ -14,6 +16,13 @@ function buildInitialState(product) {
   return {
     productModelId: product.productModel?._id || '',
     serialNumber: product.serialNumber || '',
+    quantity:
+      product.isSerialized === false
+        ? String(Number.isFinite(Number(product.quantity)) && Number(product.quantity) > 0
+            ? Number(product.quantity)
+            : 1)
+        : '1',
+    isSerialized: product.isSerialized !== false,
     inventoryNumber: product.type === 'PURCHASED' ? product.inventoryNumber || '' : '',
     rentalId: product.type === 'RENTAL' ? product.rentalId || '' : '',
     dispatchGuideId: product.dispatchGuide?._id || '',
@@ -36,6 +45,7 @@ function ProductEditForm({
 }) {
   const [values, setValues] = useState(buildInitialState(product));
   const [error, setError] = useState('');
+  const isSerialized = values.isSerialized !== false;
 
   const availableGuides = useMemo(() => {
     const items = new Map();
@@ -144,11 +154,29 @@ function ProductEditForm({
       return;
     }
 
+    const serialValue = typeof values.serialNumber === 'string' ? values.serialNumber.trim() : '';
+    const quantityValue = Number.parseInt(values.quantity, 10);
+    const inventoryNumberValue =
+      typeof values.inventoryNumber === 'string' ? values.inventoryNumber.trim() : '';
+
+    if (isSerialized && !serialValue) {
+      setError('El número de serie no puede quedar vacío.');
+      return;
+    }
+
+    if (!isSerialized) {
+      if (!Number.isFinite(quantityValue) || quantityValue <= 0) {
+        setError('Ingresa una cantidad válida (mayor o igual a 1).');
+        return;
+      }
+    }
+
     try {
       await onSubmit({
         productModelId: values.productModelId,
-        serialNumber: values.serialNumber,
-        inventoryNumber: product.type === 'PURCHASED' ? values.inventoryNumber : undefined,
+        serialNumber: isSerialized ? serialValue : undefined,
+        quantity: isSerialized ? undefined : quantityValue,
+        inventoryNumber: product.type === 'PURCHASED' ? inventoryNumberValue : undefined,
         rentalId: product.type === 'RENTAL' ? values.rentalId : undefined,
         dispatchGuideId: values.dispatchGuideId,
       });
@@ -225,10 +253,37 @@ function ProductEditForm({
           <strong>Tipo:</strong> {product.type === 'PURCHASED' ? 'Compra' : 'Arriendo'}
         </div>
 
-        <label>
-          N° de serie
-          <input name="serialNumber" value={values.serialNumber} onChange={handleChange} required />
-        </label>
+        <div>
+          <strong>Modo de registro:</strong> {isSerialized ? 'Con número de serie' : 'Por cantidad'}
+        </div>
+
+        {isSerialized ? (
+          <label>
+            N° de serie
+            <input
+              name="serialNumber"
+              value={values.serialNumber}
+              onChange={handleChange}
+              required
+            />
+          </label>
+        ) : (
+          <label>
+            Cantidad de unidades
+            <input
+              type="number"
+              name="quantity"
+              min="1"
+              step="1"
+              value={values.quantity}
+              onChange={handleChange}
+              required
+            />
+            <span className="muted small-text">
+              Este registro representa un ingreso sin serie. Ajusta la cantidad si es necesario.
+            </span>
+          </label>
+        )}
 
         {product.type === 'PURCHASED' && (
           <label>

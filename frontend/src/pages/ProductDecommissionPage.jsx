@@ -75,6 +75,16 @@ function ProductDecommissionPage() {
   );
 
   const selectedProductName = selectedProduct?.productModel?.name || selectedProduct?.name;
+  const selectedProductIsSerialized = selectedProduct?.isSerialized !== false;
+  const selectedProductSerial = selectedProductIsSerialized
+    ? selectedProduct?.serialNumber || '—'
+    : 'Sin serie';
+  const selectedProductQuantity = selectedProductIsSerialized
+    ? 1
+    : (() => {
+        const parsed = Number(selectedProduct?.quantity);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      })();
 
   useEffect(() => {
     setReason('');
@@ -184,8 +194,16 @@ function ProductDecommissionPage() {
             <form className="form-grid" onSubmit={handleSubmit}>
               <div className="full-width">
                 <strong>{selectedProductName}</strong>{' '}
-                <span className="muted">({selectedProduct.serialNumber})</span>
+                <span className="muted">({selectedProductSerial})</span>
               </div>
+              <div className="full-width muted small-text">
+                Cantidad registrada: {selectedProductQuantity}
+              </div>
+              {!selectedProductIsSerialized && (
+                <div className="full-width muted small-text">
+                  Registro por cantidad. No es necesario liberar asignaciones.
+                </div>
+              )}
               <div className="full-width">
                 <span className={getProductStatusBadge(selectedProduct.status)}>
                   {getProductStatusLabel(selectedProduct.status)}
@@ -233,6 +251,7 @@ function ProductDecommissionPage() {
             <thead>
               <tr>
                 <th>Producto</th>
+                <th>Cantidad</th>
                 <th>N° serie</th>
                 <th>Motivo</th>
                 <th>Registrado</th>
@@ -248,19 +267,30 @@ function ProductDecommissionPage() {
                   </td>
                 </tr>
               )}
-              {filteredDecommissionedProducts.map((product) => (
-                <tr key={product._id}>
-                  <td>{product.name}</td>
-                  <td>{product.serialNumber}</td>
-                  <td>{product.decommissionReason || '—'}</td>
-                  <td>
-                    {product.decommissionedAt
-                      ? new Date(product.decommissionedAt).toLocaleString('es-CL')
-                      : '—'}
-                    {product.decommissionedBy?.name ? ` · ${product.decommissionedBy.name}` : ''}
-                  </td>
-                </tr>
-              ))}
+              {filteredDecommissionedProducts.map((product) => {
+                const isSerialized = product.isSerialized !== false;
+                const parsedQuantity = Number(product.quantity);
+                const quantity = isSerialized
+                  ? 1
+                  : Number.isFinite(parsedQuantity) && parsedQuantity > 0
+                  ? parsedQuantity
+                  : 1;
+                const serial = isSerialized ? product.serialNumber || '—' : 'Sin serie';
+                return (
+                  <tr key={product._id}>
+                    <td>{product.name}</td>
+                    <td>{quantity}</td>
+                    <td>{serial}</td>
+                    <td>{product.decommissionReason || '—'}</td>
+                    <td>
+                      {product.decommissionedAt
+                        ? new Date(product.decommissionedAt).toLocaleString('es-CL')
+                        : '—'}
+                      {product.decommissionedBy?.name ? ` · ${product.decommissionedBy.name}` : ''}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -4,7 +4,9 @@ import { normalizeSearchTerm } from '../utils/search';
 const initialState = {
   productModelId: '',
   type: 'PURCHASED',
+  entryMode: 'SERIALIZED',
   serialNumbersText: '',
+  quantity: '1',
   inventoryNumber: '',
   rentalId: '',
   dispatchGuideId: '',
@@ -41,6 +43,7 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
     () => productModels.find((model) => model._id === values.productModelId) || null,
     [productModels, values.productModelId]
   );
+  const isBulkEntry = values.entryMode === 'BULK';
   const parsedSerialNumbers = useMemo(
     () =>
       values.serialNumbersText
@@ -49,7 +52,7 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
         .filter(Boolean),
     [values.serialNumbersText]
   );
-  const hasMultipleSerials = parsedSerialNumbers.length > 1;
+  const hasMultipleSerials = !isBulkEntry && parsedSerialNumbers.length > 1;
 
   useEffect(() => {
     setValues((prev) => {
@@ -107,6 +110,16 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
     }));
   };
 
+  const handleEntryModeChange = (event) => {
+    const { value } = event.target;
+    setValues((prev) => ({
+      ...prev,
+      entryMode: value,
+      serialNumbersText: value === 'SERIALIZED' ? prev.serialNumbersText : '',
+      quantity: value === 'BULK' ? prev.quantity || '1' : '1',
+    }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -123,6 +136,33 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
 
     if (!values.dispatchGuideId) {
       setError('Selecciona la guía de despacho correspondiente al ingreso.');
+      return;
+    }
+
+    const inventoryNumberValue =
+      typeof values.inventoryNumber === 'string' ? values.inventoryNumber.trim() : '';
+
+    if (isBulkEntry) {
+      const parsedQuantity = Number.parseInt(values.quantity, 10);
+      if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+        setError('Ingresa una cantidad válida (mayor o igual a 1).');
+        return;
+      }
+
+      try {
+        await onSubmit({
+          productModelId: values.productModelId,
+          type: values.type,
+          quantity: parsedQuantity,
+          inventoryNumber: values.type === 'PURCHASED' ? inventoryNumberValue : undefined,
+          rentalId: values.type === 'RENTAL' ? values.rentalId : undefined,
+          dispatchGuideId: values.dispatchGuideId,
+          isSerialized: false,
+        });
+        setValues(initialState);
+      } catch (submitError) {
+        setError(submitError.message || 'No se pudo crear el producto');
+      }
       return;
     }
 
@@ -150,10 +190,11 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
         serialNumbers,
         inventoryNumber:
           values.type === 'PURCHASED' && serialNumbers.length === 1
-            ? values.inventoryNumber
+            ? inventoryNumberValue
             : undefined,
         rentalId: values.type === 'RENTAL' ? values.rentalId : undefined,
         dispatchGuideId: values.dispatchGuideId,
+        isSerialized: true,
       });
       setValues(initialState);
     } catch (submitError) {
@@ -219,26 +260,74 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
             <option value="RENTAL">Arriendo</option>
           </select>
         </label>
-        <label className="full-width">
-          N° de serie
-          <textarea
-            name="serialNumbersText"
-            value={values.serialNumbersText}
-            onChange={handleChange}
-            rows={hasMultipleSerials ? 6 : 3}
-            placeholder="Ingresa un número por línea o separa por comas"
-            required
-          />
-          <span className="muted small-text">
-            Puedes pegar múltiples números de serie. Se registrará un producto por cada número
-            válido ingresado.
-          </span>
-          {hasMultipleSerials && (
+        <fieldset className="full-width">
+          <legend>Modo de registro</legend>
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                name="entryMode"
+                value="SERIALIZED"
+                checked={values.entryMode === 'SERIALIZED'}
+                onChange={handleEntryModeChange}
+              />
+              Con número de serie
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="entryMode"
+                value="BULK"
+                checked={values.entryMode === 'BULK'}
+                onChange={handleEntryModeChange}
+              />
+              Sin número de serie (por cantidad)
+            </label>
+          </div>
+          <p className="muted small-text">
+            Selecciona “Sin número de serie” para registrar artículos que llegan en cantidad y no se
+            identifican individualmente.
+          </p>
+        </fieldset>
+        {!isBulkEntry && (
+          <label className="full-width">
+            N° de serie
+            <textarea
+              name="serialNumbersText"
+              value={values.serialNumbersText}
+              onChange={handleChange}
+              rows={hasMultipleSerials ? 6 : 3}
+              placeholder="Ingresa un número por línea o separa por comas"
+              required
+            />
             <span className="muted small-text">
-              Se registrarán {parsedSerialNumbers.length} productos con esta información.
+              Puedes pegar múltiples números de serie. Se registrará un producto por cada número
+              válido ingresado.
             </span>
-          )}
-        </label>
+            {hasMultipleSerials && (
+              <span className="muted small-text">
+                Se registrarán {parsedSerialNumbers.length} productos con esta información.
+              </span>
+            )}
+          </label>
+        )}
+        {isBulkEntry && (
+          <label>
+            Cantidad de unidades
+            <input
+              type="number"
+              name="quantity"
+              min="1"
+              step="1"
+              value={values.quantity}
+              onChange={handleChange}
+              required
+            />
+            <span className="muted small-text">
+              Se registrará una entrada agrupada con la cantidad indicada.
+            </span>
+          </label>
+        )}
         {values.type === 'PURCHASED' && (
           <label>
             N° de inventario (opcional)
@@ -251,6 +340,11 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
             {hasMultipleSerials && (
               <span className="muted small-text">
                 Para cargar múltiples productos se dejará vacío el número de inventario.
+              </span>
+            )}
+            {isBulkEntry && (
+              <span className="muted small-text">
+                Si lo dejas vacío, el lote quedará sin número de inventario asignado.
               </span>
             )}
           </label>
