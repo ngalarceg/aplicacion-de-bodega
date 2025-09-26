@@ -54,11 +54,56 @@ function ProductEntryPage() {
     async (payload) => {
       setCreatingProduct(true);
       try {
-        await request('/products', {
-          method: 'POST',
-          data: payload,
-        });
-        window.alert('Producto registrado correctamente.');
+        const serialCount = payload.serialNumbers?.length || 0;
+
+        if (!serialCount) {
+          throw new Error('Debes ingresar al menos un número de serie.');
+        }
+
+        if (serialCount === 1) {
+          const [serialNumber] = payload.serialNumbers;
+          const singlePayload = {
+            productModelId: payload.productModelId,
+            type: payload.type,
+            serialNumber,
+            dispatchGuideId: payload.dispatchGuideId,
+          };
+
+          if (payload.type === 'PURCHASED' && payload.inventoryNumber) {
+            singlePayload.inventoryNumber = payload.inventoryNumber;
+          }
+
+          if (payload.type === 'RENTAL' && payload.rentalId) {
+            singlePayload.rentalId = payload.rentalId;
+          }
+
+          await request('/products', {
+            method: 'POST',
+            data: singlePayload,
+          });
+        } else {
+          const bulkPayload = {
+            productModelId: payload.productModelId,
+            type: payload.type,
+            serialNumbers: payload.serialNumbers,
+            dispatchGuideId: payload.dispatchGuideId,
+          };
+
+          if (payload.type === 'RENTAL' && payload.rentalId) {
+            bulkPayload.rentalId = payload.rentalId;
+          }
+
+          await request('/products/bulk', {
+            method: 'POST',
+            data: bulkPayload,
+          });
+        }
+
+        window.alert(
+          serialCount === 1
+            ? 'Producto registrado correctamente.'
+            : `Se registraron ${serialCount} productos correctamente.`
+        );
         window.location.reload();
       } catch (error) {
         throw error;
