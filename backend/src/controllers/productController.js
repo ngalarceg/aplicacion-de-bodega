@@ -42,10 +42,35 @@ function buildSearchQuery({ type, status, search }) {
 
 exports.createProduct = async (req, res) => {
   try {
-    const { productModelId, type, serialNumber, inventoryNumber, rentalId, dispatchGuideId } = req.body;
+    const {
+      productModelId,
+      type,
+      serialNumber,
+      inventoryNumber,
+      rentalId,
+      dispatchGuideId,
+      isSerialized,
+      quantity,
+    } = req.body;
 
-    if (!productModelId || !type || !serialNumber) {
-      return res.status(400).json({ message: 'Modelo de producto, tipo y número de serie son obligatorios.' });
+    if (!productModelId || !type) {
+      return res.status(400).json({ message: 'Debes indicar el modelo y el tipo del producto.' });
+    }
+
+    const serializedFlag = typeof isSerialized === 'boolean' ? isSerialized : true;
+    const sanitizedSerialNumber = typeof serialNumber === 'string' ? serialNumber.trim() : '';
+
+    if (serializedFlag && !sanitizedSerialNumber) {
+      return res.status(400).json({ message: 'El número de serie es obligatorio para este producto.' });
+    }
+
+    if (!serializedFlag) {
+      const parsedQuantity = Number(quantity);
+      if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+        return res
+          .status(400)
+          .json({ message: 'Debes indicar la cantidad de unidades para el ingreso sin serie.' });
+      }
     }
 
     if (!mongoose.Types.ObjectId.isValid(productModelId)) {
@@ -69,11 +94,6 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ message: 'Debes asociar el producto a una guía de despacho.' });
     }
 
-    if (type === 'PURCHASED' && !inventoryNumber) {
-      // El inventario es opcional, pero avisamos si falta.
-      console.warn('Producto de compra sin número de inventario, se almacenará vacío.');
-    }
-
     if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
       return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
     }
@@ -83,18 +103,34 @@ exports.createProduct = async (req, res) => {
       return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
     }
 
-    const product = await Product.create({
+    const normalizedQuantity = serializedFlag ? 1 : Math.max(1, Math.floor(Number(quantity)));
+
+    if (type === 'PURCHASED' && serializedFlag && !inventoryNumber) {
+      // El inventario es opcional, pero avisamos si falta.
+      console.warn('Producto de compra sin número de inventario, se almacenará vacío.');
+    }
+
+    const productPayload = {
       productModel: productModel._id,
       name: productModel.name,
       description: productModel.description,
       type,
-      serialNumber,
+      isSerialized: serializedFlag,
+      serialNumber: serializedFlag ? sanitizedSerialNumber : undefined,
       partNumber: productModel.partNumber,
-      inventoryNumber: type === 'PURCHASED' ? inventoryNumber || null : undefined,
+      inventoryNumber:
+        type === 'PURCHASED' && serializedFlag ? inventoryNumber?.trim() || null : undefined,
       rentalId: type === 'RENTAL' ? rentalId : undefined,
       dispatchGuide: dispatchGuide._id,
       createdBy: req.user._id,
-    });
+      quantity: serializedFlag ? 1 : normalizedQuantity,
+    };
+
+    if (type === 'PURCHASED' && !serializedFlag) {
+      productPayload.inventoryNumber = inventoryNumber ? inventoryNumber.trim() || null : null;
+    }
+
+    const product = await Product.create(productPayload);
 
     const populated = await product.populate('productModel');
 
@@ -195,12 +231,14 @@ exports.createProductsBulk = async (req, res) => {
       name: productModel.name,
       description: productModel.description,
       type,
+      isSerialized: true,
       serialNumber,
       partNumber: productModel.partNumber,
       inventoryNumber: type === 'PURCHASED' ? null : undefined,
       rentalId: type === 'RENTAL' ? rentalId : undefined,
       dispatchGuide: dispatchGuide._id,
       createdBy: req.user._id,
+      quantity: 1,
     }));
 
     const createdProducts = await Product.insertMany(toCreate);
@@ -265,6 +303,7 @@ exports.updateProduct = async (req, res) => {
       'rentalId',
       'dispatchGuideId',
       'productModelId',
+      'quantity',
     ];
 
     const updates = Object.keys(req.body).filter((key) => allowedUpdates.includes(key));
@@ -305,6 +344,26 @@ exports.updateProduct = async (req, res) => {
         product.name = productModel.name;
         product.partNumber = productModel.partNumber;
         product.description = productModel.description;
+      } else if (key === 'serialNumber') {
+        if (!product.isSerialized) {
+          return res
+            .status(400)
+            .json({ message: 'Los registros sin serie no pueden editar este campo.' });
+        }
+        const nextSerial = typeof req.body.serialNumber === 'string' ? req.body.serialNumber.trim() : '';
+        if (!nextSerial) {
+          return res.status(400).json({ message: 'El número de serie no puede quedar vacío.' });
+        }
+        product.serialNumber = nextSerial;
+      } else if (key === 'quantity') {
+        if (product.isSerialized) {
+          return res.status(400).json({ message: 'La cantidad solo aplica a productos sin serie.' });
+        }
+        const parsedQuantity = Number(req.body.quantity);
+        if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+          return res.status(400).json({ message: 'Ingresa una cantidad válida (mayor o igual a 1).' });
+        }
+        product.quantity = Math.max(1, Math.floor(parsedQuantity));
       } else {
         product[key] = req.body[key];
       }
@@ -342,6 +401,15 @@ exports.assignProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    if (!product.isSerialized) {
+      return res
+        .status(400)
+        .json({
+          message:
+            'Este registro corresponde a un ingreso por cantidad y no admite asignaciones individuales.',
+        });
     }
 
     if (product.status === 'DECOMMISSIONED') {
@@ -407,6 +475,12 @@ exports.unassignProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    if (!product.isSerialized) {
+      return res
+        .status(400)
+        .json({ message: 'Este registro se administra por cantidad y no posee asignaciones activas.' });
     }
 
     if (product.status === 'DECOMMISSIONED') {
@@ -559,7 +633,7 @@ function buildHistoryFileName(product) {
     segments.push(product.name);
   }
 
-  if (product?.serialNumber) {
+  if (product?.isSerialized && product?.serialNumber) {
     segments.push(product.serialNumber);
   }
 
@@ -648,7 +722,11 @@ function buildHistoryLines(product, assignments) {
 
   lines.push(`Producto: ${product.name || '—'}`);
   lines.push(`Modelo: ${product.productModel?.name || '—'}`);
-  lines.push(`Número de serie: ${product.serialNumber || '—'}`);
+  const serialLine = product.isSerialized
+    ? product.serialNumber || '—'
+    : '— (registro por cantidad)';
+  lines.push(`Número de serie: ${serialLine}`);
+  lines.push(`Cantidad registrada: ${product.quantity || 1}`);
   lines.push(`Número de inventario: ${product.inventoryNumber || '—'}`);
   lines.push(`Tipo: ${product.type === 'RENTAL' ? 'Arriendo' : 'Compra'}`);
   if (product.rentalId) {
@@ -775,6 +853,13 @@ exports.getStockSummary = async (req, res) => {
   try {
     const summary = await Product.aggregate([
       {
+        $addFields: {
+          quantityValue: {
+            $cond: [{ $gt: ['$quantity', 0] }, '$quantity', 1],
+          },
+        },
+      },
+      {
         $group: {
           _id: {
             productModel: '$productModel',
@@ -782,21 +867,31 @@ exports.getStockSummary = async (req, res) => {
             partNumber: '$partNumber',
           },
           description: { $first: '$description' },
-          total: { $sum: 1 },
+          total: { $sum: '$quantityValue' },
           available: {
-            $sum: { $cond: [{ $eq: ['$status', 'AVAILABLE'] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ['$status', 'AVAILABLE'] }, '$quantityValue', 0],
+            },
           },
           assigned: {
-            $sum: { $cond: [{ $eq: ['$status', 'ASSIGNED'] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ['$status', 'ASSIGNED'] }, '$quantityValue', 0],
+            },
           },
           decommissioned: {
-            $sum: { $cond: [{ $eq: ['$status', 'DECOMMISSIONED'] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ['$status', 'DECOMMISSIONED'] }, '$quantityValue', 0],
+            },
           },
           purchased: {
-            $sum: { $cond: [{ $eq: ['$type', 'PURCHASED'] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ['$type', 'PURCHASED'] }, '$quantityValue', 0],
+            },
           },
           rental: {
-            $sum: { $cond: [{ $eq: ['$type', 'RENTAL'] }, 1, 0] },
+            $sum: {
+              $cond: [{ $eq: ['$type', 'RENTAL'] }, '$quantityValue', 0],
+            },
           },
         },
       },

@@ -23,6 +23,7 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
             <tr>
               <th>Nombre</th>
               <th>Tipo</th>
+              <th>Cantidad</th>
               <th>N° serie</th>
               <th>N° parte</th>
               <th>Inventario / ID</th>
@@ -34,7 +35,7 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
           <tbody>
             {products.length === 0 && (
               <tr>
-                <td colSpan={8} className="muted">
+                <td colSpan={9} className="muted">
                   {isFiltered
                     ? 'No hay productos que coincidan con la búsqueda.'
                     : 'Aún no hay productos registrados.'}
@@ -45,6 +46,15 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
               const productName = product.productModel?.name || product.name;
               const productPartNumber = product.productModel?.partNumber || product.partNumber;
               const isSelected = product._id === selectedProductId;
+              const displaySerial = product.isSerialized
+                ? product.serialNumber || '—'
+                : 'Sin serie';
+              const parsedQuantity = Number(product.quantity);
+              const displayQuantity = product.isSerialized
+                ? 1
+                : Number.isFinite(parsedQuantity) && parsedQuantity > 0
+                ? parsedQuantity
+                : 1;
               return (
                 <tr
                   key={product._id}
@@ -53,7 +63,8 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
                 >
                   <td>{productName}</td>
                   <td>{formatType(product.type)}</td>
-                  <td>{product.serialNumber}</td>
+                  <td>{displayQuantity}</td>
+                  <td>{displaySerial}</td>
                   <td>{productPartNumber}</td>
                   <td>
                     {product.type === 'PURCHASED'
@@ -82,6 +93,8 @@ function ProductTable({ products, onSelect, selectedProductId, isFiltered = fals
                       </div>
                     ) : product.status === 'DECOMMISSIONED' ? (
                       <span className="muted">No disponible</span>
+                    ) : !product.isSerialized ? (
+                      <span className="muted">Registro sin asignaciones</span>
                     ) : (
                       <span className="muted">Sin asignación</span>
                     )}

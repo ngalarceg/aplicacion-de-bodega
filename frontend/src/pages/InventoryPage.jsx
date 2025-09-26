@@ -143,6 +143,15 @@ function InventoryPage() {
     selectedProduct?.productModel?.partNumber || selectedProduct?.partNumber;
   const selectedProductDescription =
     selectedProduct?.productModel?.description ?? selectedProduct?.description;
+  const selectedProductSerial = selectedProduct?.isSerialized
+    ? selectedProduct?.serialNumber || '—'
+    : 'Sin serie';
+  const selectedProductQuantity = selectedProduct?.isSerialized
+    ? 1
+    : (() => {
+        const parsed = Number(selectedProduct?.quantity);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      })();
 
   const handleFilterChange = (event) => {
     setStatusFilter(event.target.value);
@@ -300,7 +309,10 @@ function InventoryPage() {
                     <strong>Tipo:</strong> {formatType(selectedProduct.type)}
                   </div>
                   <div>
-                    <strong>N° serie:</strong> {selectedProduct.serialNumber}
+                    <strong>Cantidad registrada:</strong> {selectedProductQuantity}
+                  </div>
+                  <div>
+                    <strong>N° serie:</strong> {selectedProductSerial}
                   </div>
                   <div>
                     <strong>N° parte:</strong> {selectedProductPartNumber}
@@ -347,6 +359,12 @@ function InventoryPage() {
                       ).toLocaleString('es-CL')}
                     </p>
                   </div>
+                )}
+
+                {!selectedProduct.isSerialized && (
+                  <p className="muted small-text">
+                    Este registro se administra por cantidad y no admite asignaciones individuales.
+                  </p>
                 )}
 
                 {selectedProduct.status === 'DECOMMISSIONED' && (

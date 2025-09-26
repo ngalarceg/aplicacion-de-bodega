@@ -37,8 +37,15 @@ function ProductAssignmentPanel({
 
   const currentAssignment = product.currentAssignment || null;
   const isProductDecommissioned = isDecommissioned(product.status);
+  const isSerialized = product.isSerialized !== false;
+  const parsedQuantity = Number(product.quantity);
+  const quantityValue = isSerialized
+    ? 1
+    : Number.isFinite(parsedQuantity) && parsedQuantity > 0
+    ? parsedQuantity
+    : 1;
   const isProductAvailableForAssignment =
-    !isProductDecommissioned && product.status === 'AVAILABLE' && !currentAssignment;
+    isSerialized && !isProductDecommissioned && product.status === 'AVAILABLE' && !currentAssignment;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -100,6 +107,7 @@ function ProductAssignmentPanel({
   const productName = product.productModel?.name || product.name;
   const productPartNumber = product.productModel?.partNumber || product.partNumber;
   const productDescription = product.productModel?.description ?? product.description ?? '';
+  const productSerial = isSerialized ? product.serialNumber || '—' : 'Sin serie';
 
   return (
     <div className="card">
@@ -116,7 +124,13 @@ function ProductAssignmentPanel({
           <strong>Nombre:</strong> {productName}
         </div>
         <div>
-          <strong>N° serie:</strong> {product.serialNumber}
+          <strong>Cantidad registrada:</strong> {quantityValue}
+        </div>
+        <div>
+          <strong>Modo de registro:</strong> {isSerialized ? 'Con número de serie' : 'Por cantidad'}
+        </div>
+        <div>
+          <strong>N° serie:</strong> {productSerial}
         </div>
         <div>
           <strong>N° parte:</strong> {productPartNumber}
@@ -173,6 +187,8 @@ function ProductAssignmentPanel({
           </div>
         ) : isProductDecommissioned ? (
           <p className="muted">El producto está dado de baja.</p>
+        ) : !isSerialized ? (
+          <p className="muted">Registro por cantidad sin asignaciones individuales.</p>
         ) : (
           <p className="muted">El producto está disponible.</p>
         )}
@@ -180,7 +196,12 @@ function ProductAssignmentPanel({
 
       <section>
         <h4>Asignar producto</h4>
-        {isProductDecommissioned ? (
+        {!isSerialized ? (
+          <p className="muted">
+            Este registro corresponde a un ingreso por cantidad, por lo que no admite asignaciones
+            individuales.
+          </p>
+        ) : isProductDecommissioned ? (
           <p className="muted">Este producto está dado de baja y no puede asignarse.</p>
         ) : !isProductAvailableForAssignment ? (
           <p className="muted">Debes liberar el producto antes de asignarlo a otra persona.</p>

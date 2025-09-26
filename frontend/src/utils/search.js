@@ -59,6 +59,7 @@ function getProductSearchFields(product) {
     product.productModel?.partNumber,
     product.partNumber,
     product.serialNumber,
+    product.quantity,
     product.productModel?.description,
     product.description,
     product.inventoryNumber,
