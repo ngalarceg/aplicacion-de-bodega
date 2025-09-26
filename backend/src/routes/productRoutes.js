@@ -42,6 +42,12 @@ router.get(
   productController.getAssignmentHistory
 );
 
+router.get(
+  '/:id/assignments/pdf',
+  authenticate,
+  productController.downloadAssignmentHistoryPdf
+);
+
 router.post(
   '/:id/decommission',
   authenticate,

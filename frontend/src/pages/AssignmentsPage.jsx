@@ -101,6 +101,46 @@ function AssignmentsPage() {
     setSearchTerm(event.target.value);
   }, []);
 
+  const handleDownloadHistory = useCallback(async () => {
+    if (!selectedProductId) {
+      window.alert('Selecciona un producto para descargar su historial.');
+      return;
+    }
+
+    try {
+      const blob = await request(`/products/${selectedProductId}/assignments/pdf`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const parts = [];
+
+      if (selectedProduct?.name) {
+        parts.push(selectedProduct.name);
+      }
+
+      if (selectedProduct?.serialNumber) {
+        parts.push(selectedProduct.serialNumber);
+      }
+
+      const baseName = parts.join('-') || selectedProductId;
+      const safeName = baseName.replace(/[^a-zA-Z0-9-_]+/g, '_');
+
+      link.href = url;
+      link.download = `historial-${safeName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error('No se pudo descargar el historial en PDF.', error);
+      window.alert('No se pudo descargar el historial en PDF. Inténtalo nuevamente más tarde.');
+    }
+  }, [request, selectedProductId, selectedProduct]);
+
   const handleAssignProduct = useCallback(
     async (payload) => {
       if (!selectedProductId) {
@@ -259,7 +299,12 @@ function AssignmentsPage() {
             isProcessing={assignmentProcessing}
             canManage={canManage}
           />
-          <AssignmentHistory history={assignmentHistory} loading={historyLoading} />
+          <AssignmentHistory
+            history={assignmentHistory}
+            loading={historyLoading}
+            onDownload={handleDownloadHistory}
+            product={selectedProduct}
+          />
         </div>
       </div>
     </section>

@@ -426,6 +426,240 @@ exports.getAssignmentHistory = async (req, res) => {
   }
 };
 
+function formatAssignmentDate(value) {
+  if (!value) {
+    return '—';
+  }
+
+  try {
+    return new Intl.DateTimeFormat('es-CL', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  } catch (error) {
+    return new Date(value).toLocaleString('es-CL');
+  }
+}
+
+function buildHistoryFileName(product) {
+  const segments = [];
+
+  if (product?.name) {
+    segments.push(product.name);
+  }
+
+  if (product?.serialNumber) {
+    segments.push(product.serialNumber);
+  }
+
+  if (!segments.length) {
+    segments.push(product?._id?.toString() || 'producto');
+  }
+
+  const rawName = segments.join('-');
+
+  return `historial-${rawName}`.replace(/[^a-zA-Z0-9-_]+/g, '_').concat('.pdf');
+}
+
+function escapePdfText(input) {
+  return String(input || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
+}
+
+function wrapText(text, maxLength) {
+  const normalized = String(text || '').trim();
+
+  if (!normalized) {
+    return ['—'];
+  }
+
+  if (!maxLength || maxLength < 20) {
+    return [normalized];
+  }
+
+  const words = normalized.split(/\s+/);
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    if (!word) {
+      continue;
+    }
+
+    if (!current) {
+      current = word;
+      continue;
+    }
+
+    const candidate = `${current} ${word}`;
+    if (candidate.length > maxLength) {
+      lines.push(current);
+      if (word.length > maxLength) {
+        lines.push(word);
+        current = '';
+      } else {
+        current = word;
+      }
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  if (!lines.length) {
+    lines.push(normalized);
+  }
+
+  return lines;
+}
+
+function addDetailLine(lines, label, value, indent = '  ') {
+  const prefix = `${label}`;
+  const availableLength = 90 - indent.length - prefix.length;
+  const segments = wrapText(value, availableLength);
+
+  segments.forEach((segment, index) => {
+    if (index === 0) {
+      lines.push(`${indent}${prefix}${segment}`);
+    } else {
+      lines.push(`${indent}${segment}`);
+    }
+  });
+}
+
+function buildHistoryLines(product, assignments) {
+  const lines = ['Historial de asignaciones', ''];
+
+  lines.push(`Producto: ${product.name || '—'}`);
+  lines.push(`Modelo: ${product.productModel?.name || '—'}`);
+  lines.push(`Número de serie: ${product.serialNumber || '—'}`);
+  lines.push(`Número de inventario: ${product.inventoryNumber || '—'}`);
+  lines.push(`Tipo: ${product.type === 'RENTAL' ? 'Arriendo' : 'Compra'}`);
+  if (product.rentalId) {
+    lines.push(`ID de arriendo: ${product.rentalId}`);
+  }
+  lines.push('');
+
+  if (!assignments.length) {
+    lines.push('No hay movimientos registrados.');
+    return lines;
+  }
+
+  assignments.forEach((item, index) => {
+    const actionLabel = item.action === 'ASSIGN' ? 'Asignación' : 'Liberación';
+    lines.push(`${index + 1}. ${actionLabel}`);
+    addDetailLine(lines, 'Usuario asignado: ', item.assignedTo);
+    addDetailLine(lines, 'Correo electrónico: ', item.assignedEmail || '—');
+    addDetailLine(lines, 'Ubicación: ', item.location);
+    addDetailLine(lines, 'Fecha: ', formatAssignmentDate(item.assignmentDate));
+    const performedName = item.performedBy?.name || '—';
+    const performedEmail = item.performedBy?.email ? ` (${item.performedBy.email})` : '';
+    addDetailLine(lines, 'Registrado por: ', `${performedName}${performedEmail}`.trim());
+    addDetailLine(lines, 'Notas: ', item.notes || '—');
+    lines.push('');
+  });
+
+  return lines;
+}
+
+function generatePdfBufferFromLines(lines) {
+  const sanitizedLines = Array.isArray(lines) && lines.length ? lines : ['Historial'];
+  const [title, ...content] = sanitizedLines;
+  const startX = 50;
+  let currentY = 800;
+  const commands = ['BT', '/F1 16 Tf', `1 0 0 1 ${startX} ${currentY} Tm`, `(${escapePdfText(title)}) Tj`, '/F1 12 Tf'];
+
+  currentY -= 24;
+
+  content.forEach((line) => {
+    if (!line) {
+      currentY -= 16;
+      return;
+    }
+
+    commands.push(`1 0 0 1 ${startX} ${currentY} Tm`);
+    commands.push(`(${escapePdfText(line)}) Tj`);
+    currentY -= 16;
+  });
+
+  commands.push('ET');
+
+  const textContent = commands.join('\n');
+  const textLength = Buffer.byteLength(textContent, 'utf8');
+
+  const objects = [
+    '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+    '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+    '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n',
+    `4 0 obj\n<< /Length ${textLength} >>\nstream\n${textContent}\nendstream\nendobj\n`,
+    '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  let currentOffset = Buffer.byteLength(pdf, 'utf8');
+
+  objects.forEach((object) => {
+    offsets.push(currentOffset);
+    pdf += object;
+    currentOffset += Buffer.byteLength(object, 'utf8');
+  });
+
+  const xrefStart = currentOffset;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += '0000000000 65535 f \n';
+
+  for (let index = 1; index <= objects.length; index += 1) {
+    const offset = offsets[index].toString().padStart(10, '0');
+    pdf += `${offset} 00000 n \n`;
+  }
+
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+  return Buffer.from(pdf, 'utf8');
+}
+
+exports.downloadAssignmentHistoryPdf = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador inválido.' });
+    }
+
+    const product = await Product.findById(req.params.id)
+      .populate('dispatchGuide')
+      .populate('productModel');
+
+    if (!product) {
+      return res.status(404).json({ message: 'Producto no encontrado.' });
+    }
+
+    const assignments = await Assignment.find({ product: product._id })
+      .populate('performedBy', 'name email role')
+      .sort({ assignmentDate: -1 });
+
+    const lines = buildHistoryLines(product, assignments);
+    const pdfBuffer = generatePdfBufferFromLines(lines);
+    const fileName = buildHistoryFileName(product);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
+  } catch (error) {
+    console.error('downloadAssignmentHistoryPdf error', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'No se pudo generar el historial en PDF.' });
+    } else {
+      res.end();
+    }
+  }
+};
+
 exports.getStockSummary = async (req, res) => {
   try {
     const summary = await Product.aggregate([
