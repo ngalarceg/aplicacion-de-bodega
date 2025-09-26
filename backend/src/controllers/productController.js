@@ -101,7 +101,118 @@ exports.createProduct = async (req, res) => {
     res.status(201).json(populated);
   } catch (error) {
     console.error('createProduct error', error);
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: 'Ya existe un producto con ese número de serie.' });
+    }
     res.status(500).json({ message: 'No se pudo crear el producto.' });
+  }
+};
+
+exports.createProductsBulk = async (req, res) => {
+  try {
+    const { productModelId, type, serialNumbers, rentalId, dispatchGuideId } = req.body;
+
+    if (!productModelId || !type) {
+      return res
+        .status(400)
+        .json({ message: 'Debes indicar el modelo de producto y el tipo de ingreso.' });
+    }
+
+    if (!Array.isArray(serialNumbers) || serialNumbers.length === 0) {
+      return res
+        .status(400)
+        .json({ message: 'Ingresa al menos un número de serie para registrar los productos.' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(productModelId)) {
+      return res.status(400).json({ message: 'Identificador de modelo de producto inválido.' });
+    }
+
+    const sanitizedSerials = serialNumbers
+      .map((serial) => (typeof serial === 'string' ? serial.trim() : ''))
+      .filter(Boolean);
+
+    if (!sanitizedSerials.length) {
+      return res
+        .status(400)
+        .json({ message: 'Los números de serie ingresados no son válidos.' });
+    }
+
+    const duplicatesInPayload = sanitizedSerials.filter(
+      (serial, index, self) => self.indexOf(serial) !== index
+    );
+
+    if (duplicatesInPayload.length) {
+      return res.status(400).json({
+        message: `Los siguientes números de serie están repetidos: ${[
+          ...new Set(duplicatesInPayload),
+        ].join(', ')}.`,
+      });
+    }
+
+    const productModel = await ProductModel.findById(productModelId);
+    if (!productModel) {
+      return res.status(404).json({ message: 'Modelo de producto no encontrado.' });
+    }
+
+    if (!['PURCHASED', 'RENTAL'].includes(type)) {
+      return res.status(400).json({ message: 'Tipo de producto inválido.' });
+    }
+
+    if (type === 'RENTAL' && !rentalId) {
+      return res
+        .status(400)
+        .json({ message: 'Los productos de arriendo requieren un ID de arriendo.' });
+    }
+
+    if (!dispatchGuideId) {
+      return res.status(400).json({ message: 'Debes asociar los productos a una guía de despacho.' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(dispatchGuideId)) {
+      return res.status(400).json({ message: 'Identificador de guía de despacho inválido.' });
+    }
+
+    const dispatchGuide = await DispatchGuide.findById(dispatchGuideId);
+    if (!dispatchGuide) {
+      return res.status(404).json({ message: 'Guía de despacho no encontrada.' });
+    }
+
+    const existingProducts = await Product.find(
+      { serialNumber: { $in: sanitizedSerials } },
+      'serialNumber'
+    );
+
+    if (existingProducts.length) {
+      const existingSerials = existingProducts.map((product) => product.serialNumber);
+      return res.status(409).json({
+        message: `Ya existen productos registrados con los números de serie: ${existingSerials.join(', ')}.`,
+      });
+    }
+
+    const toCreate = sanitizedSerials.map((serialNumber) => ({
+      productModel: productModel._id,
+      name: productModel.name,
+      description: productModel.description,
+      type,
+      serialNumber,
+      partNumber: productModel.partNumber,
+      inventoryNumber: type === 'PURCHASED' ? null : undefined,
+      rentalId: type === 'RENTAL' ? rentalId : undefined,
+      dispatchGuide: dispatchGuide._id,
+      createdBy: req.user._id,
+    }));
+
+    const createdProducts = await Product.insertMany(toCreate);
+    const populatedProducts = await Product.populate(createdProducts, { path: 'productModel' });
+
+    res.status(201).json({ products: populatedProducts });
+  } catch (error) {
+    console.error('createProductsBulk error', error);
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: 'Algunos números de serie ya están registrados.' });
+    }
+    res.status(500).json({ message: 'No se pudieron crear los productos.' });
   }
 };
 

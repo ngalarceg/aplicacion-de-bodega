@@ -4,7 +4,7 @@ import { normalizeSearchTerm } from '../utils/search';
 const initialState = {
   productModelId: '',
   type: 'PURCHASED',
-  serialNumber: '',
+  serialNumbersText: '',
   inventoryNumber: '',
   rentalId: '',
   dispatchGuideId: '',
@@ -41,6 +41,15 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
     () => productModels.find((model) => model._id === values.productModelId) || null,
     [productModels, values.productModelId]
   );
+  const parsedSerialNumbers = useMemo(
+    () =>
+      values.serialNumbersText
+        .split(/[\n,]/)
+        .map((serial) => serial.trim())
+        .filter(Boolean),
+    [values.serialNumbersText]
+  );
+  const hasMultipleSerials = parsedSerialNumbers.length > 1;
 
   useEffect(() => {
     setValues((prev) => {
@@ -117,12 +126,32 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
       return;
     }
 
+    const serialNumbers = parsedSerialNumbers;
+
+    if (!serialNumbers.length) {
+      setError('Ingresa al menos un número de serie.');
+      return;
+    }
+
+    const duplicates = serialNumbers.filter(
+      (serial, index, arr) => arr.indexOf(serial) !== index
+    );
+
+    if (duplicates.length) {
+      const duplicatedList = [...new Set(duplicates)];
+      setError(`Los siguientes números de serie están repetidos: ${duplicatedList.join(', ')}`);
+      return;
+    }
+
     try {
       await onSubmit({
         productModelId: values.productModelId,
         type: values.type,
-        serialNumber: values.serialNumber,
-        inventoryNumber: values.type === 'PURCHASED' ? values.inventoryNumber : undefined,
+        serialNumbers,
+        inventoryNumber:
+          values.type === 'PURCHASED' && serialNumbers.length === 1
+            ? values.inventoryNumber
+            : undefined,
         rentalId: values.type === 'RENTAL' ? values.rentalId : undefined,
         dispatchGuideId: values.dispatchGuideId,
       });
@@ -190,9 +219,25 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
             <option value="RENTAL">Arriendo</option>
           </select>
         </label>
-        <label>
+        <label className="full-width">
           N° de serie
-          <input name="serialNumber" value={values.serialNumber} onChange={handleChange} required />
+          <textarea
+            name="serialNumbersText"
+            value={values.serialNumbersText}
+            onChange={handleChange}
+            rows={hasMultipleSerials ? 6 : 3}
+            placeholder="Ingresa un número por línea o separa por comas"
+            required
+          />
+          <span className="muted small-text">
+            Puedes pegar múltiples números de serie. Se registrará un producto por cada número
+            válido ingresado.
+          </span>
+          {hasMultipleSerials && (
+            <span className="muted small-text">
+              Se registrarán {parsedSerialNumbers.length} productos con esta información.
+            </span>
+          )}
         </label>
         {values.type === 'PURCHASED' && (
           <label>
@@ -201,7 +246,13 @@ function ProductForm({ onSubmit, dispatchGuides, productModels, isSubmitting }) 
               name="inventoryNumber"
               value={values.inventoryNumber}
               onChange={handleChange}
+              disabled={hasMultipleSerials}
             />
+            {hasMultipleSerials && (
+              <span className="muted small-text">
+                Para cargar múltiples productos se dejará vacío el número de inventario.
+              </span>
+            )}
           </label>
         )}
         {values.type === 'RENTAL' && (

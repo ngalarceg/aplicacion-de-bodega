@@ -11,6 +11,13 @@ router.post(
   productController.createProduct
 );
 
+router.post(
+  '/bulk',
+  authenticate,
+  authorizeRoles('ADMIN', 'MANAGER'),
+  productController.createProductsBulk
+);
+
 router.get('/', authenticate, productController.listProducts);
 router.get('/stock', authenticate, productController.getStockSummary);
 router.get('/:id', authenticate, productController.getProduct);
