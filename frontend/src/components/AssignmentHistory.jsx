@@ -1,8 +1,16 @@
-function AssignmentHistory({ history, loading }) {
+function AssignmentHistory({ history, loading, onDownload, product }) {
   return (
     <div className="card">
       <div className="card-header">
         <h3>Historial de asignaciones</h3>
+        <button
+          type="button"
+          className="secondary"
+          onClick={onDownload}
+          disabled={!onDownload || !product || loading}
+        >
+          Descargar PDF
+        </button>
       </div>
       <div className="table-responsive">
         <table className="data-table compact">
@@ -57,6 +65,8 @@ function AssignmentHistory({ history, loading }) {
 AssignmentHistory.defaultProps = {
   history: [],
   loading: false,
+  onDownload: undefined,
+  product: null,
 };
 
 export default AssignmentHistory;

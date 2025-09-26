@@ -41,7 +41,10 @@ async function parseResponse(response) {
   return response.text();
 }
 
-export async function apiRequest(path, { method = 'GET', token, data, formData } = {}) {
+export async function apiRequest(
+  path,
+  { method = 'GET', token, data, formData, responseType } = {}
+) {
   const headers = new Headers();
   let body;
 
@@ -87,6 +90,14 @@ export async function apiRequest(path, { method = 'GET', token, data, formData }
 
   if (response.status === 204) {
     return null;
+  }
+
+  if (responseType === 'blob') {
+    return response.blob();
+  }
+
+  if (responseType === 'text') {
+    return response.text();
   }
 
   return parseResponse(response);
